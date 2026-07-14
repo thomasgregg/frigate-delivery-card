@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.1.0";
+const FDC_VERSION = "1.1.1";
 
 const FDC_SCHEMA = [
   { name: "camera", required: true, selector: { text: {} } },
@@ -36,7 +36,7 @@ const FDC_SCHEMA = [
 
 const FDC_LABELS = {
   camera: "Frigate camera name (as in Frigate config)",
-  sub_labels: "Sub labels (e.g. dhl, ups — empty = no sub_label filter)",
+  sub_labels: "Sub labels (e.g. dhl, ups - empty = no sub_label filter)",
   labels: "Labels (optional, e.g. person)",
   zones: "Zones (optional, e.g. mailbox)",
   hours: "Look back (hours)",
@@ -295,7 +295,7 @@ class FrigateDeliveryCard extends HTMLElement {
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
               : ""
           }
-          <div class="cap"><span class="co">${ev.co}</span><span>${this._when(ev.t)} · ${this._idx + 1}/${list.length}</span></div>
+          <div class="cap"><span class="co">${ev.co}</span><span>${this._when(ev.t)} &#183; ${this._idx + 1}/${list.length}</span></div>
         </div>
         <div class="thumbs">${list
           .map(
