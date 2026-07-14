@@ -14,6 +14,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 ## Features
 
 - **Sub_label filtering** — show only events with specific sub_labels (delivery companies, recognized faces, license plates)
+- **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
 - **Filter chips** per company/sub_label with live event counts
 - **Thumbnail strip** for quick scrubbing, arrow navigation, keyboard-free touch operation

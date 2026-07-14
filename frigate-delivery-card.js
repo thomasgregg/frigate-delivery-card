@@ -14,9 +14,85 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.0.0";
+const FDC_VERSION = "1.1.0";
+
+const FDC_SCHEMA = [
+  { name: "camera", required: true, selector: { text: {} } },
+  { name: "sub_labels", selector: { text: { multiple: true } } },
+  { name: "labels", selector: { text: { multiple: true } } },
+  { name: "zones", selector: { text: { multiple: true } } },
+  {
+    type: "grid",
+    name: "",
+    schema: [
+      { name: "hours", selector: { number: { min: 1, max: 720, mode: "box" } } },
+      { name: "slideshow", selector: { number: { min: 0, max: 60, mode: "box" } } },
+      { name: "limit", selector: { number: { min: 1, max: 500, mode: "box" } } },
+      { name: "refresh", selector: { number: { min: 10, max: 3600, mode: "box" } } },
+    ],
+  },
+  { name: "instance_id", selector: { text: {} } },
+];
+
+const FDC_LABELS = {
+  camera: "Frigate camera name (as in Frigate config)",
+  sub_labels: "Sub labels (e.g. dhl, ups — empty = no sub_label filter)",
+  labels: "Labels (optional, e.g. person)",
+  zones: "Zones (optional, e.g. mailbox)",
+  hours: "Look back (hours)",
+  slideshow: "Slideshow interval (s, 0 = off)",
+  limit: "Max events",
+  refresh: "Refresh every (s)",
+  instance_id: "Frigate instance id",
+};
+
+class FrigateDeliveryCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = config || {};
+    this._render();
+  }
+  set hass(h) {
+    this._hass = h;
+    if (this._form) this._form.hass = h;
+  }
+  _render() {
+    if (!this._form) {
+      this._form = document.createElement("ha-form");
+      this._form.computeLabel = (s) => FDC_LABELS[s.name] || s.name;
+      this._form.addEventListener("value-changed", (ev) => {
+        const cfg = { ...this._config, ...ev.detail.value };
+        for (const k of ["sub_labels", "labels", "zones"]) {
+          if (Array.isArray(cfg[k])) {
+            cfg[k] = cfg[k].map((v) => String(v).trim()).filter((v) => v);
+            if (!cfg[k].length && k !== "sub_labels") delete cfg[k];
+          }
+        }
+        this._config = cfg;
+        this.dispatchEvent(
+          new CustomEvent("config-changed", { detail: { config: cfg }, bubbles: true, composed: true })
+        );
+      });
+      this.appendChild(this._form);
+    }
+    this._form.hass = this._hass;
+    this._form.data = {
+      hours: 24,
+      slideshow: 6,
+      limit: 100,
+      refresh: 120,
+      instance_id: "frigate",
+      sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
+      ...this._config,
+    };
+    this._form.schema = FDC_SCHEMA;
+  }
+}
+customElements.define("frigate-delivery-card-editor", FrigateDeliveryCardEditor);
 
 class FrigateDeliveryCard extends HTMLElement {
+  static getConfigElement() {
+    return document.createElement("frigate-delivery-card-editor");
+  }
   static getStubConfig() {
     return {
       camera: "entrance",
@@ -257,6 +333,10 @@ class FrigateDeliveryCard extends HTMLElement {
 }
 
 customElements.define("frigate-delivery-card", FrigateDeliveryCard);
+// Legacy alias (pre-1.0 inline version used this element name)
+if (!customElements.get("delivery-reel-card")) {
+  customElements.define("delivery-reel-card", class extends FrigateDeliveryCard {});
+}
 
 window.customCards = window.customCards || [];
 window.customCards.push({
