@@ -19,7 +19,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Filter chips** per company/sub_label with live event counts
 - **Thumbnail strip** for quick scrubbing, arrow navigation, keyboard-free touch operation
 - **Fullscreen lightbox** on tap
-- **Time-window based** (e.g. last 24 h) — retention is handled entirely by your Frigate `snapshots: retain:` settings
+- **Time-range based** — rolling window (e.g. last 24 h) or **today only** (since local midnight); retention is handled entirely by your Frigate `snapshots: retain:` settings
 - **Auto-refresh** (default every 2 minutes)
 - Also filters by `labels` and `zones`, so it doubles as e.g. a *"person at the mailbox"* card
 - Theme-aware styling, no external dependencies, ~8 KB
@@ -60,7 +60,8 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `sub_labels` | list | `[dhl, dpd, gls, ups, amazon]` | Sub_labels to show. Set `[]` to disable sub_label filtering |
 | `labels` | list | – | Optional label filter, e.g. `[person]` |
 | `zones` | list | – | Optional zone filter, e.g. `[mailbox]` |
-| `hours` | number | `24` | Time window to look back |
+| `period` | string | `hours` | Time range: `hours` (rolling look-back window) or `today` (since local midnight) |
+| `hours` | number | `24` | Look-back window in hours (only used when `period: hours`) |
 | `limit` | number | `100` | Maximum events to fetch |
 | `slideshow` | number | `6` | Auto-advance interval in seconds, `0` to disable |
 | `refresh` | number | `120` | Refetch interval in seconds |
@@ -80,6 +81,20 @@ sub_labels:
   - ups
   - amazon
 hours: 24
+```
+
+**Deliveries today only (resets at local midnight):**
+
+```yaml
+type: custom:frigate-delivery-card
+camera: entrance
+sub_labels:
+  - dhl
+  - dpd
+  - gls
+  - ups
+  - amazon
+period: today
 ```
 
 **Who was at the mailbox (zone + label instead of sub_label):**
