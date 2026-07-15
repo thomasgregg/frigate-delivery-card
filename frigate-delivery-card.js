@@ -4,8 +4,8 @@
  *
  * A lightweight Lovelace card that shows Frigate event snapshots filtered by
  * sub_label (e.g. delivery companies recognized by a Frigate+ model), with an
- * auto-advancing slideshow, thumbnail strip, per-company filter chips and a
- * fullscreen lightbox.
+ * auto-advancing slideshow, thumbnail strip, per-company filter chips, an
+ * event list view and a fullscreen lightbox.
  *
  * Data source: the official Frigate Home Assistant integration websocket API
  * (frigate/events/get) — no files on disk, no shell commands, no polling of
@@ -14,13 +14,49 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.2.0";
+const FDC_VERSION = "1.3.0";
+
+/** Brand colors for well-known delivery sub_labels (bg / fg). */
+const FDC_COLORS = {
+  dhl: { bg: "#FFCC00", fg: "#D40511" },
+  dpd: { bg: "#DC0032", fg: "#FFFFFF" },
+  gls: { bg: "#061AB1", fg: "#FFD100" },
+  ups: { bg: "#351C15", fg: "#FFB500" },
+  amazon: { bg: "#232F3E", fg: "#FF9900" },
+  hermes: { bg: "#0091DF", fg: "#FFFFFF" },
+  fedex: { bg: "#4D148C", fg: "#FF6600" },
+};
 
 const FDC_SCHEMA = [
   { name: "camera", required: true, selector: { text: {} } },
   { name: "sub_labels", selector: { text: { multiple: true } } },
   { name: "labels", selector: { text: { multiple: true } } },
   { name: "zones", selector: { text: { multiple: true } } },
+  {
+    name: "view",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "reel", label: "Reel (slideshow + thumbnail strip)" },
+          { value: "list", label: "List (event rows with thumbnails)" },
+          { value: "combined", label: "Combined (slideshow + event rows)" },
+        ],
+      },
+    },
+  },
+  {
+    name: "sort",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "newest", label: "Newest first" },
+          { value: "oldest", label: "Oldest first" },
+        ],
+      },
+    },
+  },
   {
     name: "period",
     selector: {
@@ -51,6 +87,8 @@ const FDC_LABELS = {
   sub_labels: "Sub labels (e.g. dhl, ups - empty = no sub_label filter)",
   labels: "Labels (optional, e.g. person)",
   zones: "Zones (optional, e.g. mailbox)",
+  view: "View",
+  sort: "Sort order",
   period: "Time range",
   hours: "Look back (hours, only used for rolling window)",
   slideshow: "Slideshow interval (s, 0 = off)",
@@ -89,6 +127,8 @@ class FrigateDeliveryCardEditor extends HTMLElement {
     }
     this._form.hass = this._hass;
     this._form.data = {
+      view: "reel",
+      sort: "newest",
       period: "hours",
       hours: 24,
       slideshow: 6,
@@ -127,6 +167,8 @@ class FrigateDeliveryCard extends HTMLElement {
         labels: null,       // optional: e.g. ["person"]
         sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
         zones: null,        // optional: e.g. ["mailbox"]
+        view: "reel",       // "reel" | "list" | "combined"
+        sort: "newest",     // "newest" | "oldest"
         period: "hours",    // "hours" = rolling window | "today" = since local midnight
         hours: 24,          // only used when period === "hours"
         limit: 100,
@@ -135,6 +177,8 @@ class FrigateDeliveryCard extends HTMLElement {
       },
       cfg
     );
+    if (!["reel", "list", "combined"].includes(this._cfg.view)) this._cfg.view = "reel";
+    if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
     this._events = [];
     this._idx = 0;
     this._filter = null;
@@ -142,7 +186,7 @@ class FrigateDeliveryCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 6;
+    return this._cfg && this._cfg.view === "list" ? 4 : 6;
   }
 
   set hass(h) {
@@ -181,6 +225,7 @@ class FrigateDeliveryCard extends HTMLElement {
 
   _startShow() {
     this._stopShow();
+    if (this._cfg.view === "list") return; // nothing to advance
     const s = Number(this._cfg.slideshow);
     if (s > 0)
       this._show = setInterval(() => {
@@ -242,7 +287,7 @@ class FrigateDeliveryCard extends HTMLElement {
           t: e.start_time,
         }))
         .filter((e) => e.id && e.co)
-        .sort((a, b) => b.t - a.t);
+        .sort((a, b) => (c.sort === "oldest" ? a.t - b.t : b.t - a.t));
       const cur = this._list()[this._idx];
       this._events = evs;
       const keep = cur ? this._list().findIndex((e) => e.id === cur.id) : -1;
@@ -273,6 +318,14 @@ class FrigateDeliveryCard extends HTMLElement {
     return `${d.toLocaleDateString()} ${hm}`;
   }
 
+  /** Inline style for a company badge; falls back to theme colors. */
+  _badge(co) {
+    const c = FDC_COLORS[co];
+    return c
+      ? `background:${c.bg};color:${c.fg};border-color:${c.bg}`
+      : `background:var(--secondary-background-color);color:var(--primary-text-color);border-color:var(--divider-color)`;
+  }
+
   _build() {
     const r = this.attachShadow({ mode: "open" });
     r.innerHTML = `<style>
@@ -287,7 +340,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
       .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 14px 10px;color:#fff;font-size:14px;font-weight:500;
         background:linear-gradient(transparent,rgba(0,0,0,.65));display:flex;justify-content:space-between;align-items:baseline}
-      .cap .co{text-transform:uppercase;letter-spacing:1px;font-weight:700}
+      .cap .co{text-transform:uppercase;letter-spacing:1px;font-weight:700;border-radius:10px;padding:1px 10px;border:1px solid transparent}
       .nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
         background:rgba(0,0,0,.45);color:#fff;border:0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
       .nav:hover{background:rgba(0,0,0,.7)}
@@ -296,6 +349,15 @@ class FrigateDeliveryCard extends HTMLElement {
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
       .thumbs img.on{opacity:1;border-color:var(--primary-color)}
+      .rows{display:flex;flex-direction:column;padding:4px 12px 12px;gap:6px}
+      .row{display:flex;align-items:center;gap:12px;padding:6px;border-radius:10px;cursor:pointer;
+        border:2px solid transparent;background:transparent}
+      .row:hover{background:var(--secondary-background-color)}
+      .row.on{border-color:var(--primary-color);background:var(--secondary-background-color)}
+      .row img{width:96px;height:54px;object-fit:cover;border-radius:8px;flex:none}
+      .row .badge{text-transform:uppercase;letter-spacing:1px;font-weight:700;font-size:12px;
+        border-radius:10px;padding:2px 10px;border:1px solid transparent;flex:none}
+      .row .time{color:var(--secondary-text-color);font-size:13px;margin-left:auto;flex:none}
       .empty{padding:28px 16px;text-align:center;color:var(--secondary-text-color)}
       .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out}
       .lb img{max-width:96vw;max-height:96vh;border-radius:6px}
@@ -311,6 +373,7 @@ class FrigateDeliveryCard extends HTMLElement {
       b.innerHTML = `<div class="empty">${this._err}</div>`;
       return;
     }
+    const view = this._cfg.view;
     const list = this._list();
     const companies = [...new Set(this._events.map((e) => e.co))];
     const chips = this._events.length
@@ -319,9 +382,9 @@ class FrigateDeliveryCard extends HTMLElement {
           ${companies
             .map(
               (c) =>
-                `<button class="chip ${this._filter === c ? "on" : ""}" data-co="${c}">${c} (${
-                  this._events.filter((e) => e.co === c).length
-                })</button>`
+                `<button class="chip ${this._filter === c ? "on" : ""}" ${
+                  this._filter === c ? `style="${this._badge(c)}"` : ""
+                } data-co="${c}">${c} (${this._events.filter((e) => e.co === c).length})</button>`
             )
             .join("")}
         </div>`
@@ -331,9 +394,10 @@ class FrigateDeliveryCard extends HTMLElement {
     } else {
       if (this._idx >= list.length) this._idx = 0;
       const ev = list[this._idx];
-      b.innerHTML =
-        chips +
-        `
+      const stage =
+        view === "list"
+          ? ""
+          : `
         <div class="stage" id="stage">
           <img src="${this._img(ev.id)}" alt="${ev.co}">
           ${
@@ -341,14 +405,33 @@ class FrigateDeliveryCard extends HTMLElement {
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
               : ""
           }
-          <div class="cap"><span class="co">${ev.co}</span><span>${this._when(ev.t)} &#183; ${this._idx + 1}/${list.length}</span></div>
-        </div>
-        <div class="thumbs">${list
-          .map(
-            (e, i) =>
-              `<img src="${this._img(e.id)}" class="${i === this._idx ? "on" : ""}" data-i="${i}" alt="${e.co}">`
-          )
-          .join("")}</div>`;
+          <div class="cap"><span class="co" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
+              ev.t
+            )} &#183; ${this._idx + 1}/${list.length}</span></div>
+        </div>`;
+      const thumbs =
+        view === "reel"
+          ? `<div class="thumbs">${list
+              .map(
+                (e, i) =>
+                  `<img src="${this._img(e.id)}" class="${i === this._idx ? "on" : ""}" data-i="${i}" alt="${e.co}">`
+              )
+              .join("")}</div>`
+          : "";
+      const rows =
+        view === "reel"
+          ? ""
+          : `<div class="rows">${list
+              .map(
+                (e, i) =>
+                  `<div class="row ${view === "combined" && i === this._idx ? "on" : ""}" data-i="${i}">
+                    <img src="${this._img(e.id)}" loading="lazy" alt="${e.co}">
+                    <span class="badge" style="${this._badge(e.co)}">${e.co}</span>
+                    <span class="time">${this._when(e.t)}</span>
+                  </div>`
+              )
+              .join("")}</div>`;
+      b.innerHTML = chips + stage + thumbs + rows;
       const go = (i) => {
         this._idx = (i + list.length) % list.length;
         this._render();
@@ -356,8 +439,16 @@ class FrigateDeliveryCard extends HTMLElement {
       const q = (s) => b.querySelector(s);
       if (q("#prev")) q("#prev").onclick = (e) => { e.stopPropagation(); go(this._idx - 1); };
       if (q("#next")) q("#next").onclick = (e) => { e.stopPropagation(); go(this._idx + 1); };
-      q("#stage").onclick = () => this._lightbox(this._img(ev.id));
+      if (q("#stage")) q("#stage").onclick = () => this._lightbox(this._img(ev.id));
       b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
+      b.querySelectorAll(".row").forEach(
+        (el) =>
+          (el.onclick = () => {
+            const i = Number(el.dataset.i);
+            if (view === "combined") go(i);
+            else this._lightbox(this._img(list[i].id));
+          })
+      );
     }
     b.querySelectorAll(".chip").forEach(
       (el) =>
@@ -389,7 +480,7 @@ window.customCards.push({
   type: "frigate-delivery-card",
   name: "Frigate Delivery Card",
   description:
-    "Frigate event snapshots filtered by sub_label (delivery companies, faces, plates) with slideshow, filter chips and lightbox.",
+    "Frigate event snapshots filtered by sub_label (delivery companies, faces, plates) with slideshow, list view, filter chips and lightbox.",
 });
 
 console.info(
