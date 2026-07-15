@@ -14,13 +14,25 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.1.1";
+const FDC_VERSION = "1.2.0";
 
 const FDC_SCHEMA = [
   { name: "camera", required: true, selector: { text: {} } },
   { name: "sub_labels", selector: { text: { multiple: true } } },
   { name: "labels", selector: { text: { multiple: true } } },
   { name: "zones", selector: { text: { multiple: true } } },
+  {
+    name: "period",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "hours", label: "Rolling window (look back N hours)" },
+          { value: "today", label: "Today (since local midnight)" },
+        ],
+      },
+    },
+  },
   {
     type: "grid",
     name: "",
@@ -39,7 +51,8 @@ const FDC_LABELS = {
   sub_labels: "Sub labels (e.g. dhl, ups - empty = no sub_label filter)",
   labels: "Labels (optional, e.g. person)",
   zones: "Zones (optional, e.g. mailbox)",
-  hours: "Look back (hours)",
+  period: "Time range",
+  hours: "Look back (hours, only used for rolling window)",
   slideshow: "Slideshow interval (s, 0 = off)",
   limit: "Max events",
   refresh: "Refresh every (s)",
@@ -76,6 +89,7 @@ class FrigateDeliveryCardEditor extends HTMLElement {
     }
     this._form.hass = this._hass;
     this._form.data = {
+      period: "hours",
       hours: 24,
       slideshow: 6,
       limit: 100,
@@ -113,7 +127,8 @@ class FrigateDeliveryCard extends HTMLElement {
         labels: null,       // optional: e.g. ["person"]
         sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
         zones: null,        // optional: e.g. ["mailbox"]
-        hours: 24,
+        period: "hours",    // "hours" = rolling window | "today" = since local midnight
+        hours: 24,          // only used when period === "hours"
         limit: 100,
         slideshow: 6,       // seconds; 0 disables auto-advance
         refresh: 120,       // seconds between refetches
@@ -137,15 +152,31 @@ class FrigateDeliveryCard extends HTMLElement {
       this._booted = true;
       this._fetch();
       this._poll = setInterval(() => this._fetch(), this._cfg.refresh * 1000);
+      this._scheduleMidnight();
       this._startShow();
     }
   }
 
   disconnectedCallback() {
     if (this._poll) clearInterval(this._poll);
+    if (this._mid) clearTimeout(this._mid);
     this._stopShow();
     this._poll = null;
+    this._mid = null;
     this._booted = false;
+  }
+
+  /** In "today" mode, wipe the reel promptly when the day rolls over. */
+  _scheduleMidnight() {
+    if (this._mid) clearTimeout(this._mid);
+    this._mid = null;
+    if (this._cfg.period !== "today") return;
+    const next = new Date();
+    next.setHours(24, 0, 5, 0); // 5 s past local midnight
+    this._mid = setTimeout(() => {
+      this._fetch();
+      this._scheduleMidnight();
+    }, next.getTime() - Date.now());
   }
 
   _startShow() {
@@ -167,6 +198,21 @@ class FrigateDeliveryCard extends HTMLElement {
     }
   }
 
+  /** Unix timestamp (s) that events must start after. */
+  _after() {
+    if (this._cfg.period === "today") {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0); // local midnight - DST/timezone safe
+      return Math.floor(d.getTime() / 1000);
+    }
+    return Math.floor(Date.now() / 1000) - this._cfg.hours * 3600;
+  }
+
+  /** Human wording for the current time range, used in the empty state. */
+  _scope() {
+    return this._cfg.period === "today" ? "today" : `in the last ${this._cfg.hours} h`;
+  }
+
   async _fetch() {
     if (!this._hass) return;
     const c = this._cfg;
@@ -174,7 +220,7 @@ class FrigateDeliveryCard extends HTMLElement {
       type: "frigate/events/get",
       instance_id: c.instance_id,
       cameras: c.cameras || [c.camera],
-      after: Math.floor(Date.now() / 1000) - c.hours * 3600,
+      after: this._after(),
       has_snapshot: true,
       limit: c.limit,
     };
@@ -281,7 +327,7 @@ class FrigateDeliveryCard extends HTMLElement {
         </div>`
       : "";
     if (!list.length) {
-      b.innerHTML = chips + `<div class="empty">No matching events in the last ${this._cfg.hours} h.</div>`;
+      b.innerHTML = chips + `<div class="empty">No matching events ${this._scope()}.</div>`;
     } else {
       if (this._idx >= list.length) this._idx = 0;
       const ev = list[this._idx];
