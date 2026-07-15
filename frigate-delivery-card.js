@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.3.1";
+const FDC_VERSION = "1.3.2";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -331,18 +331,20 @@ class FrigateDeliveryCard extends HTMLElement {
     r.innerHTML = `<style>
       ha-card{overflow:hidden}
       .chips{display:flex;gap:6px;padding:10px 12px 0;flex-wrap:wrap}
-      .chip{border-radius:14px;padding:3px 12px;font-size:12px;cursor:pointer;
+      .chip{border-radius:12px;padding:3px 12px;font-size:11px;cursor:pointer;
         background:var(--secondary-background-color);color:var(--primary-text-color);
-        border:1px solid var(--divider-color);text-transform:uppercase;letter-spacing:.5px;
-        opacity:.7;font-weight:700}
-      .chip.on{opacity:1;box-shadow:0 0 0 2px var(--primary-color)}
-      .chip.all{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
+        border:1px solid var(--divider-color);text-transform:uppercase;letter-spacing:.8px;
+        font-weight:700}
+      .chip.on{box-shadow:0 0 0 2.5px var(--primary-color)}
+      .chip.all.on{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
+      .badge{text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:11px;
+        border-radius:12px;padding:2px 10px;border:1px solid transparent;flex:none}
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
       .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 14px 10px;color:#fff;font-size:14px;font-weight:500;
         background:linear-gradient(transparent,rgba(0,0,0,.65));display:flex;justify-content:space-between;align-items:baseline}
-      .cap .co{text-transform:uppercase;letter-spacing:1px;font-weight:700;border-radius:10px;padding:1px 10px;border:1px solid transparent}
+      .cap .badge{font-size:12px}
       .nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
         background:rgba(0,0,0,.45);color:#fff;border:0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
       .nav:hover{background:rgba(0,0,0,.7)}
@@ -351,14 +353,16 @@ class FrigateDeliveryCard extends HTMLElement {
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
       .thumbs img.on{opacity:1;border-color:var(--primary-color)}
-      .rows{display:flex;flex-direction:column;padding:2px 12px 10px;gap:2px}
+      .rows{display:flex;flex-direction:column;padding:2px 12px 10px;gap:2px;
+        max-height:122px;overflow-y:auto;scrollbar-width:thin}
+      .rows::-webkit-scrollbar{width:6px}
+      .rows::-webkit-scrollbar-thumb{background:var(--divider-color);border-radius:3px}
       .row{display:flex;align-items:center;gap:10px;padding:3px 4px;border-radius:8px;cursor:pointer;
         border:2px solid transparent;background:transparent}
       .row:hover{background:var(--secondary-background-color)}
       .row.on{border-color:var(--primary-color);background:var(--secondary-background-color)}
       .row img{width:64px;height:36px;object-fit:cover;border-radius:6px;flex:none}
-      .row .badge{text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:10px;
-        border-radius:9px;padding:1px 8px;border:1px solid transparent;flex:none}
+      .row .badge{font-size:10px;padding:1px 8px}
       .row .time{color:var(--secondary-text-color);font-size:12px;margin-left:auto;flex:none}
       .empty{padding:28px 16px;text-align:center;color:var(--secondary-text-color)}
       .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out}
@@ -380,13 +384,13 @@ class FrigateDeliveryCard extends HTMLElement {
     const companies = [...new Set(this._events.map((e) => e.co))];
     const chips = this._events.length
       ? `<div class="chips">
-          <button class="chip all ${this._filter ? "" : "on"}" data-co="">All (${this._events.length})</button>
+          <button class="chip all ${this._filter ? "" : "on"}" data-co="">${this._filter ? "" : "&#10003; "}All (${this._events.length})</button>
           ${companies
             .map(
               (c) =>
-                `<button class="chip ${this._filter === c ? "on" : ""}" style="${this._badge(c)}" data-co="${c}">${c} (${
-                  this._events.filter((e) => e.co === c).length
-                })</button>`
+                `<button class="chip ${this._filter === c ? "on" : ""}" style="${this._badge(c)}" data-co="${c}">${
+                  this._filter === c ? "&#10003; " : ""
+                }${c} (${this._events.filter((e) => e.co === c).length})</button>`
             )
             .join("")}
         </div>`
@@ -407,7 +411,7 @@ class FrigateDeliveryCard extends HTMLElement {
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
               : ""
           }
-          <div class="cap"><span class="co" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
+          <div class="cap"><span class="badge" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
               ev.t
             )} &#183; ${this._idx + 1}/${list.length}</span></div>
         </div>`;
