@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.3.2";
+const FDC_VERSION = "1.4.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -41,6 +41,7 @@ const FDC_SCHEMA = [
           { value: "reel", label: "Reel (slideshow + thumbnail strip)" },
           { value: "list", label: "List (event rows with thumbnails)" },
           { value: "combined", label: "Combined (slideshow + event rows)" },
+          { value: "timeline", label: "Timeline (brand-colored time pills + slideshow)" },
         ],
       },
     },
@@ -177,7 +178,7 @@ class FrigateDeliveryCard extends HTMLElement {
       },
       cfg
     );
-    if (!["reel", "list", "combined"].includes(this._cfg.view)) this._cfg.view = "reel";
+    if (!["reel", "list", "combined", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel";
     if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
     this._events = [];
     this._idx = 0;
@@ -339,6 +340,12 @@ class FrigateDeliveryCard extends HTMLElement {
       .chip.all.on{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
       .badge{text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:11px;
         border-radius:12px;padding:2px 10px;border:1px solid transparent;flex:none}
+      .tl{display:flex;gap:6px;padding:10px 12px 0;overflow-x:auto;scrollbar-width:thin}
+      .tl::-webkit-scrollbar{height:6px}
+      .tl::-webkit-scrollbar-thumb{background:var(--divider-color);border-radius:3px}
+      .pill{border-radius:12px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;
+        border:1px solid transparent;flex:none;letter-spacing:.5px}
+      .pill.on{box-shadow:0 0 0 2.5px var(--primary-color)}
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
@@ -382,7 +389,7 @@ class FrigateDeliveryCard extends HTMLElement {
     const view = this._cfg.view;
     const list = this._list();
     const companies = [...new Set(this._events.map((e) => e.co))];
-    const chips = this._events.length
+    const chips = this._events.length && view !== "timeline"
       ? `<div class="chips">
           <button class="chip all ${this._filter ? "" : "on"}" data-co="">${this._filter ? "" : "&#10003; "}All (${this._events.length})</button>
           ${companies
@@ -400,6 +407,17 @@ class FrigateDeliveryCard extends HTMLElement {
     } else {
       if (this._idx >= list.length) this._idx = 0;
       const ev = list[this._idx];
+      const tl =
+        view === "timeline"
+          ? `<div class="tl">${list
+              .map(
+                (e, i) =>
+                  `<button class="pill ${i === this._idx ? "on" : ""}" style="${this._badge(e.co)}" title="${e.co}" data-i="${i}">${
+                    i === this._idx ? "&#10003; " : ""
+                  }${this._when(e.t)}</button>`
+              )
+              .join("")}</div>`
+          : "";
       const stage =
         view === "list"
           ? ""
@@ -425,7 +443,7 @@ class FrigateDeliveryCard extends HTMLElement {
               .join("")}</div>`
           : "";
       const rows =
-        view === "reel"
+        view === "reel" || view === "timeline"
           ? ""
           : `<div class="rows">${list
               .map(
@@ -437,7 +455,7 @@ class FrigateDeliveryCard extends HTMLElement {
                   </div>`
               )
               .join("")}</div>`;
-      b.innerHTML = chips + stage + thumbs + rows;
+      b.innerHTML = chips + tl + stage + thumbs + rows;
       const go = (i) => {
         this._idx = (i + list.length) % list.length;
         this._render();
@@ -447,6 +465,9 @@ class FrigateDeliveryCard extends HTMLElement {
       if (q("#next")) q("#next").onclick = (e) => { e.stopPropagation(); go(this._idx + 1); };
       if (q("#stage")) q("#stage").onclick = () => this._lightbox(this._img(ev.id));
       b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
+      b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
+      const onPill = b.querySelector(".pill.on");
+      if (onPill) onPill.scrollIntoView({ block: "nearest", inline: "nearest" });
       b.querySelectorAll(".row").forEach(
         (el) =>
           (el.onclick = () => {
