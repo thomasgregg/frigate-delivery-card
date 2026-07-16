@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.5.0";
+const FDC_VERSION = "1.5.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -331,7 +331,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .chips{display:flex;gap:6px;padding:10px 12px 0;flex-wrap:wrap}
       .chip{border-radius:16px;padding:9px 14px;font-size:12px;cursor:pointer;
         background:var(--secondary-background-color);color:var(--primary-text-color);
-        border:1px solid var(--divider-color);text-transform:uppercase;letter-spacing:.8px;
+        border:1px solid var(--divider-color);text-transform:uppercase;letter-spacing:.5px;
         font-weight:700;line-height:1.2}
       .chip.on{box-shadow:0 0 0 2.5px var(--primary-color)}
       .chip.all.on{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
@@ -341,7 +341,8 @@ class FrigateDeliveryCard extends HTMLElement {
         scrollbar-width:none;-ms-overflow-style:none}
       .tl::-webkit-scrollbar{display:none}
       .pill{border-radius:16px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;
-        border:1px solid transparent;flex:none;letter-spacing:.5px;line-height:1.2}
+        border:1px solid transparent;flex:none;letter-spacing:.5px;line-height:1.2;
+        text-transform:uppercase}
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
