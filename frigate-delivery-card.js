@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.5.1";
+const FDC_VERSION = "1.5.2";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -337,7 +337,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .chip.all.on{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
       .badge{text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:11px;
         border-radius:12px;padding:2px 10px;border:1px solid transparent;flex:none}
-      .tl{display:flex;gap:6px;padding:10px 12px 4px;overflow-x:auto;
+      .tl{display:flex;gap:6px;padding:10px 12px 0;overflow-x:auto;
         scrollbar-width:none;-ms-overflow-style:none}
       .tl::-webkit-scrollbar{display:none}
       .pill{border-radius:16px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;
