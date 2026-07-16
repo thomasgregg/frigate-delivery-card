@@ -14,7 +14,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 ## Features
 
 - **Sub_label filtering** — show only events with specific sub_labels (delivery companies, recognized faces, license plates)
-- **Four views** — `reel` (slideshow + thumbnail strip), `list` (compact event rows), `combined` (slideshow + synced rows) and `timeline` (brand-colored time pills above the slideshow)
+- **Two views** — `reel` (slideshow + thumbnail strip) and `timeline` (brand-colored time pills above the slideshow)
 - **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx) on captions, chips, rows and timeline pills
 - **Sort order** — newest first (default) or oldest first
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
@@ -63,7 +63,7 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `sub_labels` | list | `[dhl, dpd, gls, ups, amazon]` | Sub_labels to show. Set `[]` to disable sub_label filtering |
 | `labels` | list | – | Optional label filter, e.g. `[person]` |
 | `zones` | list | – | Optional zone filter, e.g. `[mailbox]` |
-| `view` | string | `reel` | `reel`, `list`, `combined` or `timeline` |
+| `view` | string | `reel` | `reel` or `timeline` |
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
 | `period` | string | `hours` | Time range: `hours` (rolling look-back window) or `today` (since local midnight) |
 | `hours` | number | `24` | Look-back window in hours (only used when `period: hours`) |

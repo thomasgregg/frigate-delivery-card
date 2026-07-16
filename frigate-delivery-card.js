@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.4.2";
+const FDC_VERSION = "1.5.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -39,8 +39,6 @@ const FDC_SCHEMA = [
         mode: "dropdown",
         options: [
           { value: "reel", label: "Reel (slideshow + thumbnail strip)" },
-          { value: "list", label: "List (event rows with thumbnails)" },
-          { value: "combined", label: "Combined (slideshow + event rows)" },
           { value: "timeline", label: "Timeline (brand-colored time pills + slideshow)" },
         ],
       },
@@ -168,7 +166,7 @@ class FrigateDeliveryCard extends HTMLElement {
         labels: null,       // optional: e.g. ["person"]
         sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
         zones: null,        // optional: e.g. ["mailbox"]
-        view: "reel",       // "reel" | "list" | "combined"
+        view: "reel",       // "reel" | "timeline"
         sort: "newest",     // "newest" | "oldest"
         period: "hours",    // "hours" = rolling window | "today" = since local midnight
         hours: 24,          // only used when period === "hours"
@@ -178,7 +176,7 @@ class FrigateDeliveryCard extends HTMLElement {
       },
       cfg
     );
-    if (!["reel", "list", "combined", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel";
+    if (!["reel", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel"; // list/combined removed in 1.5.0
     if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
     this._events = [];
     this._idx = 0;
@@ -187,7 +185,7 @@ class FrigateDeliveryCard extends HTMLElement {
   }
 
   getCardSize() {
-    return this._cfg && this._cfg.view === "list" ? 4 : 6;
+    return 6;
   }
 
   set hass(h) {
@@ -226,7 +224,6 @@ class FrigateDeliveryCard extends HTMLElement {
 
   _startShow() {
     this._stopShow();
-    if (this._cfg.view === "list") return; // nothing to advance
     const s = Number(this._cfg.slideshow);
     if (s > 0)
       this._show = setInterval(() => {
@@ -332,10 +329,10 @@ class FrigateDeliveryCard extends HTMLElement {
     r.innerHTML = `<style>
       ha-card{overflow:hidden}
       .chips{display:flex;gap:6px;padding:10px 12px 0;flex-wrap:wrap}
-      .chip{border-radius:12px;padding:3px 12px;font-size:11px;cursor:pointer;
+      .chip{border-radius:16px;padding:9px 14px;font-size:12px;cursor:pointer;
         background:var(--secondary-background-color);color:var(--primary-text-color);
         border:1px solid var(--divider-color);text-transform:uppercase;letter-spacing:.8px;
-        font-weight:700}
+        font-weight:700;line-height:1.2}
       .chip.on{box-shadow:0 0 0 2.5px var(--primary-color)}
       .chip.all.on{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
       .badge{text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:11px;
@@ -359,17 +356,6 @@ class FrigateDeliveryCard extends HTMLElement {
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
       .thumbs img.on{opacity:1;border-color:var(--primary-color)}
-      .rows{display:flex;flex-direction:column;padding:2px 12px 10px;gap:2px;
-        max-height:122px;overflow-y:auto;scrollbar-width:thin}
-      .rows::-webkit-scrollbar{width:6px}
-      .rows::-webkit-scrollbar-thumb{background:var(--divider-color);border-radius:3px}
-      .row{display:flex;align-items:center;gap:10px;padding:3px 4px;border-radius:8px;cursor:pointer;
-        border:2px solid transparent;background:transparent}
-      .row:hover{background:var(--secondary-background-color)}
-      .row.on{border-color:var(--primary-color);background:var(--secondary-background-color)}
-      .row img{width:64px;height:36px;object-fit:cover;border-radius:6px;flex:none}
-      .row .badge{font-size:10px;padding:1px 8px}
-      .row .time{color:var(--secondary-text-color);font-size:12px;margin-left:auto;flex:none}
       .empty{padding:28px 16px;text-align:center;color:var(--secondary-text-color)}
       .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out}
       .lb img{max-width:96vw;max-height:96vh;border-radius:6px}
@@ -417,10 +403,7 @@ class FrigateDeliveryCard extends HTMLElement {
               )
               .join("")}</div>`
           : "";
-      const stage =
-        view === "list"
-          ? ""
-          : `
+      const stage = `
         <div class="stage" id="stage">
           <img src="${this._img(ev.id)}" alt="${ev.co}">
           ${
@@ -441,20 +424,7 @@ class FrigateDeliveryCard extends HTMLElement {
               )
               .join("")}</div>`
           : "";
-      const rows =
-        view === "reel" || view === "timeline"
-          ? ""
-          : `<div class="rows">${list
-              .map(
-                (e, i) =>
-                  `<div class="row ${view === "combined" && i === this._idx ? "on" : ""}" data-i="${i}">
-                    <img src="${this._img(e.id)}" loading="lazy" alt="${e.co}">
-                    <span class="badge" style="${this._badge(e.co)}">${e.co}</span>
-                    <span class="time">${this._when(e.t)}</span>
-                  </div>`
-              )
-              .join("")}</div>`;
-      b.innerHTML = chips + tl + stage + thumbs + rows;
+      b.innerHTML = chips + tl + stage + thumbs;
       const go = (i) => {
         this._idx = (i + list.length) % list.length;
         this._render();
@@ -467,14 +437,6 @@ class FrigateDeliveryCard extends HTMLElement {
       b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       const onPill = b.querySelector(".pill.on");
       if (onPill) onPill.scrollIntoView({ block: "nearest", inline: "nearest" });
-      b.querySelectorAll(".row").forEach(
-        (el) =>
-          (el.onclick = () => {
-            const i = Number(el.dataset.i);
-            if (view === "combined") go(i);
-            else this._lightbox(this._img(list[i].id));
-          })
-      );
     }
     b.querySelectorAll(".chip").forEach(
       (el) =>
