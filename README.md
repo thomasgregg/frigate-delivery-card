@@ -17,6 +17,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Two views** — `reel` (slideshow + thumbnail strip) and `timeline` (brand-colored time pills above the slideshow)
 - **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx) on captions, chips, rows and timeline pills
 - **Sort order** — newest first (default) or oldest first
+- **Clip playback** — a &#9654; button on the image plays the event's recorded clip in the lightbox (requires `record:` enabled in Frigate; hide with `clips: false`)
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
 - **Filter chips** per company/sub_label with live event counts
@@ -36,6 +37,7 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 - [Frigate](https://frigate.video) with snapshots enabled for the relevant camera
 - The [Frigate Home Assistant integration](https://github.com/blakeblackshear/frigate-hass-integration) (v5+)
 - For delivery company recognition: a [Frigate+](https://frigate.video/plus/) model that assigns company sub_labels, with the labels listed under `objects: track:` in your Frigate config
+- For clip playback: `record:` enabled in Frigate (event/alert retention is enough)
 
 ## Installation
 
@@ -65,6 +67,7 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `zones` | list | – | Optional zone filter, e.g. `[mailbox]` |
 | `view` | string | `reel` | `reel` or `timeline` |
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
+| `clips` | boolean | `true` | Show the &#9654; clip-playback button on the image (requires Frigate `record:` enabled) |
 | `period` | string | `hours` | Time range: `hours` (rolling look-back window) or `today` (since local midnight) |
 | `hours` | number | `24` | Look-back window in hours (only used when `period: hours`) |
 | `limit` | number | `100` | Maximum events to fetch |
