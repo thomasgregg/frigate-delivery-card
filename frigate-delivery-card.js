@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.6.0";
+const FDC_VERSION = "1.6.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -363,9 +363,10 @@ class FrigateDeliveryCard extends HTMLElement {
       .nav:hover{background:rgba(0,0,0,.7)}
       .prev{left:8px}.next{right:8px}
       .playbtn{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;
-        background:rgba(0,0,0,.5);color:#fff;border:0;font-size:15px;cursor:pointer;
-        display:flex;align-items:center;justify-content:center;padding-left:3px}
-      .playbtn:hover{background:rgba(0,0,0,.75)}
+        background:rgba(0,0,0,.5);color:#fff;border:0;cursor:pointer;padding:0;line-height:0;
+        display:flex;align-items:center;justify-content:center;transition:background .15s ease}
+      .playbtn:hover{background:rgba(0,0,0,.78)}
+      .playbtn svg{display:block;margin-left:2px}
       .thumbs{display:flex;gap:8px;overflow-x:auto;padding:0 12px 12px}
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
@@ -427,7 +428,7 @@ class FrigateDeliveryCard extends HTMLElement {
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
               : ""
           }
-          ${this._cfg.clips ? `<button class="playbtn" id="play" title="Play clip">&#9654;</button>` : ""}
+          ${this._cfg.clips ? `<button class="playbtn" id="play" title="Play clip"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>` : ""}
           <div class="cap"><span class="badge" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
               ev.t
             )} &#183; ${this._idx + 1}/${list.length}</span></div>
