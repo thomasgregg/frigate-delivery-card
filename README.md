@@ -15,7 +15,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 
 - **Sub_label filtering** — show only events with specific sub_labels (delivery companies, recognized faces, license plates)
 - **Two views** — `reel` (slideshow + thumbnail strip) and `timeline` (brand-colored time pills above the slideshow)
-- **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx) on captions, chips, rows and timeline pills
+- **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx, USPS, PostNL, PostNord, Royal Mail, An Post, Canada Post, Purolator, NZ Post) on captions, chips and timeline pills; unknown couriers fall back to theme colors
 - **Sort order** — newest first (default) or oldest first
 - **Inline clip playback** — a &#9654; button swaps the image for the event's full-quality recorded clip, streamed progressively right inside the card: playback starts within a couple of seconds and plays at full resolution. The scrubber covers the buffered portion (the HA proxy doesn't support range requests, so jumping far ahead isn't possible). the player stays open at clip end (replay via the controls); &#10005; returns to the image. The fullscreen view also has a &#9654; button to play the clip enlarged (requires `record:` enabled in Frigate; hide with `clips: false`)
 - **Fullscreen button** — a &#x26F6; button opens the still image full-screen; the video player has its own native fullscreen control

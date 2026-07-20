@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.14.0";
+const FDC_VERSION = "1.15.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -25,6 +25,14 @@ const FDC_COLORS = {
   amazon: { bg: "#232F3E", fg: "#FF9900" },
   hermes: { bg: "#0091DF", fg: "#FFFFFF" },
   fedex: { bg: "#4D148C", fg: "#FF6600" },
+  usps: { bg: "#333366", fg: "#FFFFFF" },
+  postnl: { bg: "#FF6200", fg: "#001A70" },
+  postnord: { bg: "#00A0D6", fg: "#FFFFFF" },
+  royal_mail: { bg: "#DA202A", fg: "#FFDD00" },
+  an_post: { bg: "#00594C", fg: "#FFFFFF" },
+  canada_post: { bg: "#E31837", fg: "#FFFFFF" },
+  purolator: { bg: "#003087", fg: "#FFFFFF" },
+  nzpost: { bg: "#E4002B", fg: "#FFFFFF" },
 };
 
 const FDC_SCHEMA = [
@@ -429,7 +437,7 @@ class FrigateDeliveryCard extends HTMLElement {
               (c) =>
                 `<button class="chip ${this._filter === c ? "on" : ""}" style="${this._badge(c)}" data-co="${c}">${
                   this._filter === c ? "&#10003; " : ""
-                }${c} (${this._events.filter((e) => e.co === c).length})</button>`
+                }${c.replace(/_/g, " ")} (${this._events.filter((e) => e.co === c).length})</button>`
             )
             .join("")}
         </div>`
@@ -479,7 +487,7 @@ class FrigateDeliveryCard extends HTMLElement {
           ${
             this._playing === true
               ? ""
-              : `<div class="cap"><span class="badge" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
+              : `<div class="cap"><span class="badge" style="${this._badge(ev.co)}">${ev.co.replace(/_/g, " ")}</span><span>${this._when(
                   ev.t
                 )} &#183; ${this._idx + 1}/${list.length}</span></div>`
           }
