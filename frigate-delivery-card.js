@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.11.0";
+const FDC_VERSION = "1.12.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -328,6 +328,63 @@ class FrigateDeliveryCard extends HTMLElement {
     this._render();
   }
 
+  /** Frigate's preview GIF is a raw ~1 fps timelapse that plays back far too
+   *  fast. Where the browser supports it (Chrome/Edge), decode the GIF frames
+   *  and re-play them on a canvas slowed down to a watchable pace. Falls back
+   *  to the plain (fast) GIF elsewhere. */
+  async _runPreview(id) {
+    const token = (this._pvToken = (this._pvToken || 0) + 1);
+    const alive = () => this._pvToken === token && this._playing === "preview" && this._clipFor === id;
+    const sr = this.shadowRoot;
+    const fallbackImg = () => {
+      const c = sr && sr.querySelector("#pvc");
+      if (!c || !alive()) return;
+      const img = document.createElement("img");
+      img.className = "pv";
+      img.onerror = () => { if (alive()) this._startHd(id); };
+      img.src = this._preview(id);
+      c.replaceWith(img);
+    };
+    try {
+      if (!("ImageDecoder" in window)) return fallbackImg();
+      const res = await fetch(this._preview(id));
+      if (!res.ok) { if (alive()) this._startHd(id); return; }
+      const buf = await res.arrayBuffer();
+      if (!alive()) return;
+      const dec = new ImageDecoder({ data: buf, type: "image/gif" });
+      await dec.tracks.ready;
+      const count = dec.tracks.selectedTrack.frameCount;
+      if (!count) return fallbackImg();
+      const canvas = sr && sr.querySelector("#pvc");
+      if (!canvas || !alive()) return;
+      const ctx = canvas.getContext("2d");
+      const slow = Number(this._cfg.preview_slowdown) > 0 ? Number(this._cfg.preview_slowdown) : 3;
+      let i = 0;
+      const step = async () => {
+        if (!alive()) { dec.close(); return; }
+        try {
+          const { image } = await dec.decode({ frameIndex: i });
+          if (!alive()) { image.close(); dec.close(); return; }
+          if (canvas.width !== image.displayWidth) {
+            canvas.width = image.displayWidth;
+            canvas.height = image.displayHeight;
+          }
+          ctx.drawImage(image, 0, 0);
+          const frameMs = image.duration ? image.duration / 1000 : 60;
+          image.close();
+          i = (i + 1) % count;
+          this._pvTimer = setTimeout(step, Math.max(frameMs, 20) * slow);
+        } catch (e) {
+          dec.close();
+          fallbackImg();
+        }
+      };
+      step();
+    } catch (e) {
+      fallbackImg();
+    }
+  }
+
   /** Full-quality playback via Frigate's HLS VOD endpoint: real duration known
    *  immediately, seeking fetches only the segments you jump to. Note the
    *  recording bitrate must fit your connection - best on LAN. */
@@ -406,6 +463,11 @@ class FrigateDeliveryCard extends HTMLElement {
       this._hls.destroy();
       this._hls = null;
     }
+    if (this._pvTimer) {
+      clearTimeout(this._pvTimer);
+      this._pvTimer = null;
+    }
+    this._pvToken = (this._pvToken || 0) + 1; // invalidates any running preview loop
     this._clipFor = null;
     this._playing = false;
   }
@@ -460,7 +522,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
-      .stage img.pv{object-fit:contain;background:#000}
+      .stage .pv{width:100%;height:100%;object-fit:contain;background:#000;display:block}
       .stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
       .cliperr{display:flex;align-items:center;justify-content:center;height:100%;
         color:#fff;background:#000;font-size:14px;padding:20px;text-align:center;line-height:1.6}
@@ -536,7 +598,7 @@ class FrigateDeliveryCard extends HTMLElement {
         this._playing === true
           ? `<video id="clipvid" controls autoplay playsinline></video>`
           : this._playing === "preview"
-          ? `<img class="pv" src="${this._preview(ev.id)}" alt="preview">`
+          ? `<canvas class="pv" id="pvc"></canvas>`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -598,12 +660,7 @@ class FrigateDeliveryCard extends HTMLElement {
           e.stopPropagation();
           this._startHd(ev.id);
         };
-      const pv = q(".pv");
-      if (pv)
-        pv.onerror = () => {
-          // no preview available (older Frigate/integration) - go straight to HD
-          if (this._playing === "preview") this._startHd(ev.id);
-        };
+      if (q("#pvc")) this._runPreview(ev.id);
       if (q("#play"))
         q("#play").onclick = (e) => {
           e.stopPropagation();
