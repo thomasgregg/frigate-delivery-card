@@ -18,6 +18,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx) on captions, chips, rows and timeline pills
 - **Sort order** — newest first (default) or oldest first
 - **Clip playback** — a &#9654; button on the image plays the event's recorded clip in the lightbox (requires `record:` enabled in Frigate; hide with `clips: false`)
+- **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
 - **Filter chips** per company/sub_label with live event counts
@@ -143,7 +144,7 @@ hours: 72
 
 ## Troubleshooting
 
-- **"No matching events"** — check that snapshots are enabled for the camera in Frigate and that events in the window actually carry the sub_label (Frigate UI → Explore → filter by sub label).
+- **"No matching events"** — check that events in the window actually carry the sub_label (Frigate UI → Explore → filter by sub label). Snapshots are recommended for image quality but not required since v1.7.0 (thumbnail fallback).
 - **Card doesn't load / unknown card type** — hard-refresh the browser (Ctrl+Shift+R) after installation.
 - **"Unable to find Frigate instance"** — set `instance_id` to your Frigate client id (only relevant with multiple Frigate instances).
 - **Sub_labels are case-sensitive as stored by Frigate** — the card lowercases companies for chips, but the query filter must match what Frigate stores (Frigate+ logo labels are lowercase).

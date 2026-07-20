@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.6.2";
+const FDC_VERSION = "1.7.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -269,7 +269,6 @@ class FrigateDeliveryCard extends HTMLElement {
       instance_id: c.instance_id,
       cameras: c.cameras || [c.camera],
       after: this._after(),
-      has_snapshot: true,
       limit: c.limit,
     };
     if (Array.isArray(c.labels) && c.labels.length) msg.labels = c.labels;
@@ -308,6 +307,11 @@ class FrigateDeliveryCard extends HTMLElement {
 
   _img(id) {
     return `/api/frigate/notifications/${id}/snapshot.jpg`;
+  }
+
+  /** Small object-crop thumbnail - exists for every event, even without a saved snapshot. */
+  _thumb(id) {
+    return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
 
   _clip(id) {
@@ -422,7 +426,7 @@ class FrigateDeliveryCard extends HTMLElement {
           : "";
       const stage = `
         <div class="stage" id="stage">
-          <img src="${this._img(ev.id)}" alt="${ev.co}">
+          <img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">
           ${
             list.length > 1
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
@@ -438,7 +442,7 @@ class FrigateDeliveryCard extends HTMLElement {
           ? `<div class="thumbs">${list
               .map(
                 (e, i) =>
-                  `<img src="${this._img(e.id)}" class="${i === this._idx ? "on" : ""}" data-i="${i}" alt="${e.co}">`
+                  `<img src="${this._img(e.id)}" class="${i === this._idx ? "on" : ""}" data-i="${i}" alt="${e.co}" onerror="this.onerror=null;this.src='${this._thumb(e.id)}'">`
               )
               .join("")}</div>`
           : "";
@@ -450,7 +454,7 @@ class FrigateDeliveryCard extends HTMLElement {
       const q = (s) => b.querySelector(s);
       if (q("#prev")) q("#prev").onclick = (e) => { e.stopPropagation(); go(this._idx - 1); };
       if (q("#next")) q("#next").onclick = (e) => { e.stopPropagation(); go(this._idx + 1); };
-      if (q("#stage")) q("#stage").onclick = () => this._lightbox(this._img(ev.id));
+      if (q("#stage")) q("#stage").onclick = () => this._lightbox(ev.id);
       if (q("#play")) q("#play").onclick = (e) => { e.stopPropagation(); this._clipbox(ev.id); };
       b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
@@ -467,10 +471,10 @@ class FrigateDeliveryCard extends HTMLElement {
     );
   }
 
-  _lightbox(src) {
+  _lightbox(id) {
     const d = document.createElement("div");
     d.className = "lb";
-    d.innerHTML = `<img src="${src}">`;
+    d.innerHTML = `<img src="${this._img(id)}" onerror="this.onerror=null;this.src='${this._thumb(id)}'">`;
     d.onclick = () => d.remove();
     this.shadowRoot.appendChild(d);
   }
