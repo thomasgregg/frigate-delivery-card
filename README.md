@@ -1,38 +1,35 @@
 # Frigate Delivery Card
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/thomasgregg/frigate-delivery-card/blob/main/LICENSE)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/thomasgregg/frigate-delivery-card)
 
 A lightweight Home Assistant Lovelace card that shows **Frigate event snapshots filtered by `sub_label`** — the one filter the popular camera cards don't support yet.
 
-Built for the classic use case: a **Frigate+ model recognizes delivery company logos** (DHL, DPD, GLS, UPS, Amazon, …) and assigns them as sub_labels to tracked vehicles. This card turns those events into a clean, browsable snapshot reel on your dashboard — *"which delivery vans came by in the last 24 hours?"* — with zero extra plumbing: no snapshot automations, no folders, no cleanup jobs.
+Built for the classic use case: a **Frigate+ model recognizes delivery company logos** (DHL, DPD, GLS, UPS, Amazon, FedEx, …) and assigns them as sub_labels to tracked vehicles. This card turns those events into a clean, browsable snapshot reel on your dashboard — *"which delivery vans came by today?"* — with zero extra plumbing: no snapshot automations, no folders, no cleanup jobs.
 
-<!-- Add a screenshot: docs/screenshot.png -->
-<!-- ![Screenshot](docs/screenshot.png) -->
+![Screenshot of the Frigate Delivery Card](https://raw.githubusercontent.com/thomasgregg/frigate-delivery-card/main/docs/screenshot.png)
 
 ## Features
 
 - **Sub_label filtering** — show only events with specific sub_labels (delivery companies, recognized faces, license plates)
 - **Two views** — `reel` (slideshow + thumbnail strip) and `timeline` (brand-colored time pills above the slideshow)
-- **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx, USPS, PostNL, PostNord, Royal Mail, An Post, Canada Post, Purolator, NZ Post) on captions, chips and timeline pills; unknown couriers fall back to theme colors
+- **Brand-colored badges** for every courier the Frigate+ model supports (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx, USPS, PostNL, PostNord, Royal Mail, An Post, Canada Post, Purolator, NZ Post) on captions, chips and timeline pills; unknown couriers fall back to theme colors
 - **Sort order** — newest first (default) or oldest first
-- **Inline clip playback** — a &#9654; button swaps the image for the event's full-quality recorded clip, streamed progressively right inside the card: playback starts within a couple of seconds and plays at full resolution. The scrubber covers the buffered portion (the HA proxy doesn't support range requests, so jumping far ahead isn't possible). the player stays open at clip end (replay via the controls); &#10005; returns to the image. The fullscreen view also has a &#9654; button to play the clip enlarged (requires `record:` enabled in Frigate; hide with `clips: false`)
-- **Fullscreen button** — a &#x26F6; button opens the still image full-screen; the video player has its own native fullscreen control
+- **Inline clip playback** — a ▶ button plays the event's full-quality recorded clip right inside the card, streamed progressively so playback starts within seconds. The player stays open at clip end (replay via the controls); ✕ returns to the image. Requires `record:` enabled in Frigate; hide with `clips: false`
+- **Fullscreen view** — a ⛶ button opens the still image enlarged, with its own ▶ button to play the clip at full size
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
 - **Filter chips** per company/sub_label with live event counts
-- **Thumbnail strip** for quick scrubbing, arrow navigation, keyboard-free touch operation
-- **Fullscreen lightbox** on tap
-- **Time-range based** — rolling window (e.g. last 24 h) or **today only** (since local midnight); retention is handled entirely by your Frigate `snapshots: retain:` settings
+- **Time-range based** — rolling window (e.g. last 24 h) or **today only** (since local midnight); retention is handled entirely by your Frigate settings
 - **Auto-refresh** (default every 2 minutes)
 - Also filters by `labels` and `zones`, so it doubles as e.g. a *"person at the mailbox"* card
-- Theme-aware styling, no external dependencies, ~8 KB
+- Theme-aware styling, no external dependencies, ~9 KB
 
 ## How it works
 
-The card talks to the [Frigate Home Assistant integration](https://github.com/blakeblackshear/frigate-hass-integration)'s websocket API (`frigate/events/get`), which natively supports `sub_labels` filtering. Snapshots are served through the integration's built-in proxy. Everything stays inside Home Assistant — the browser never talks to the Frigate server directly.
+The card talks to the [Frigate Home Assistant integration](https://github.com/blakeblackshear/frigate-hass-integration)'s websocket API (`frigate/events/get`), which natively supports `sub_labels` filtering. Snapshots and clips are served through the integration's built-in proxy. Everything stays inside Home Assistant — the browser never talks to the Frigate server directly.
 
 ## Requirements
 
@@ -64,12 +61,12 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `type` | string | **required** | `custom:frigate-delivery-card` |
 | `camera` | string | **required*** | Frigate camera name (as in your Frigate config) |
 | `cameras` | list | – | Multiple Frigate camera names (*alternative to `camera`) |
-| `sub_labels` | list | `[dhl, dpd, gls, ups, amazon]` | Sub_labels to show. Set `[]` to disable sub_label filtering |
+| `sub_labels` | list | all supported couriers | Sub_labels to show. Defaults to every courier the Frigate+ model supports. Set `[]` to disable sub_label filtering |
 | `labels` | list | – | Optional label filter, e.g. `[person]` |
 | `zones` | list | – | Optional zone filter, e.g. `[mailbox]` |
 | `view` | string | `reel` | `reel` or `timeline` |
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
-| `clips` | boolean | `true` | Show the &#9654; clip-playback button on the image (requires Frigate `record:` enabled) |
+| `clips` | boolean | `true` | Show the ▶ clip-playback button (requires Frigate `record:` enabled) |
 | `period` | string | `hours` | Time range: `hours` (rolling look-back window) or `today` (since local midnight) |
 | `hours` | number | `24` | Look-back window in hours (only used when `period: hours`) |
 | `limit` | number | `100` | Maximum events to fetch |
@@ -84,16 +81,10 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 ```yaml
 type: custom:frigate-delivery-card
 camera: entrance
-sub_labels:
-  - dhl
-  - dpd
-  - gls
-  - ups
-  - amazon
 hours: 24
 ```
 
-**Timeline — brand-colored time pills, no filter chips:**
+**Timeline — brand-colored time pills, deliveries today only (resets at local midnight):**
 
 ```yaml
 type: custom:frigate-delivery-card
@@ -102,7 +93,7 @@ view: timeline
 period: today
 ```
 
-**Deliveries today only (resets at local midnight):**
+**Only specific couriers:**
 
 ```yaml
 type: custom:frigate-delivery-card
@@ -110,9 +101,7 @@ camera: entrance
 sub_labels:
   - dhl
   - dpd
-  - gls
   - ups
-  - amazon
 period: today
 ```
 
@@ -143,12 +132,72 @@ sub_labels:
 hours: 72
 ```
 
+## Recommended Frigate settings
+
+The card only shows what Frigate keeps, so a few Frigate settings make a big difference:
+
+```yaml
+objects:
+  track:
+    - person
+    - car
+    - package
+    - license_plate
+    # every delivery logo the Frigate+ model supports:
+    - dhl
+    - dpd
+    - gls
+    - ups
+    - amazon
+    - fedex
+    - usps
+    - postnl
+    - postnord
+    - royal_mail
+    - an_post
+    - canada_post
+    - purolator
+    - nzpost
+
+cameras:
+  your_camera:
+    objects:
+      filters:
+        car:
+          min_area: 20000   # see note below
+    snapshots:
+      enabled: true
+      retain:
+        default: 14         # see note below
+
+record:
+  enabled: true
+  alerts:
+    post_capture: 15        # see note below
+    retain:
+      days: 14
+  detections:
+    post_capture: 15
+    retain:
+      days: 14
+```
+
+Why these settings:
+
+- **Track every courier logo** — attribute labels that aren't in `objects: track:` are silently discarded, and a weaker false-positive from another courier may win instead. Tracking unused couriers costs nothing.
+- **`snapshots: retain:` controls the card's history** — Frigate deletes the *event itself* when its snapshot retention expires, so with `retain: default: 1` your card can never look back more than a day, regardless of the card's `hours` setting. Match it to your record retention.
+- **`min_area` on car** — Frigate saves the snapshot from the frame with the highest detection confidence. High-resolution detection can score a half-out-of-frame van at the image edge higher than the nicely framed one; a `min_area` filter (~2 % of the frame at 1280×720) makes those sliver detections ineligible, so snapshots show the van properly framed. Tune to your camera: the value is in pixels of the detect resolution.
+- **`post_capture: 15`** — extends each event clip 15 s past the detection, so the clip actually shows where the package was left, not just the van arriving.
+- **Detect at a decent resolution** (e.g. 1280×720) — logo recognition needs pixels; very low detect resolutions miss small or distant logos.
+
 ## Troubleshooting
 
-- **"No matching events"** — check that events in the window actually carry the sub_label (Frigate UI → Explore → filter by sub label). Snapshots are recommended for image quality but not required since v1.7.0 (thumbnail fallback).
+- **"No matching events"** — check that events in the window actually carry the sub_label (Frigate UI → Explore → filter by sub label).
+- **Card shows fewer days than expected** — your Frigate `snapshots: retain:` is shorter than the card's look-back window (see recommended settings above).
 - **Card doesn't load / unknown card type** — hard-refresh the browser (Ctrl+Shift+R) after installation.
 - **"Unable to find Frigate instance"** — set `instance_id` to your Frigate client id (only relevant with multiple Frigate instances).
 - **Sub_labels are case-sensitive as stored by Frigate** — the card lowercases companies for chips, but the query filter must match what Frigate stores (Frigate+ logo labels are lowercase).
+- **Clip seeking is limited while loading** — clips stream progressively through the HA proxy (no range-request support), so the scrubber covers the buffered portion; full quality is prioritized over instant seeking.
 
 ## Credits
 
@@ -156,4 +205,4 @@ Inspired by the sub_label filtering gap in the excellent [Advanced Camera Card](
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/thomasgregg/frigate-delivery-card/blob/main/LICENSE)

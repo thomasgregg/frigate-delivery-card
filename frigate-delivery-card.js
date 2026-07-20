@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.15.0";
+const FDC_VERSION = "1.16.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -145,7 +145,7 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       limit: 100,
       refresh: 120,
       instance_id: "frigate",
-      sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
+      sub_labels: ["dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl", "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost"],
       ...this._config,
     };
     this._form.schema = FDC_SCHEMA;
@@ -160,7 +160,7 @@ class FrigateDeliveryCard extends HTMLElement {
   static getStubConfig() {
     return {
       camera: "entrance",
-      sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
+      sub_labels: ["dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl", "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost"],
       hours: 24,
     };
   }
@@ -175,7 +175,7 @@ class FrigateDeliveryCard extends HTMLElement {
         camera: null,
         cameras: null,
         labels: null,       // optional: e.g. ["person"]
-        sub_labels: ["dhl", "dpd", "gls", "ups", "amazon"],
+        sub_labels: ["dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl", "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost"],
         zones: null,        // optional: e.g. ["mailbox"]
         view: "reel",       // "reel" | "timeline"
         sort: "newest",     // "newest" | "oldest"
