@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.10.0";
+const FDC_VERSION = "1.11.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -318,12 +318,20 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
 
-  /** Clip playback via Frigate's HLS VOD endpoint. The recording is served in
-   *  ~10s segments: the real duration is known immediately, seeking fetches only
-   *  the segments you jump to, and playback buffers ahead instead of downloading
-   *  the whole file - smooth even on slow remote connections (e.g. Nabu Casa).
-   *  Falls back to the plain clip.mp4 stream if VOD is unavailable. */
+  /** &#9654; plays the event PREVIEW first: Frigate's low-res fast-forward render
+   *  of the whole event (~100 KB) - loads in well under a second even on slow
+   *  remote connections. The HD button switches to the full-quality recording. */
   _startClip(id) {
+    this._stopClip();
+    this._clipFor = id;
+    this._playing = "preview";
+    this._render();
+  }
+
+  /** Full-quality playback via Frigate's HLS VOD endpoint: real duration known
+   *  immediately, seeking fetches only the segments you jump to. Note the
+   *  recording bitrate must fit your connection - best on LAN. */
+  _startHd(id) {
     this._stopClip();
     this._clipFor = id;
     this._playing = true;
@@ -406,6 +414,11 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/clip.mp4`;
   }
 
+  /** Low-res fast-forward preview of the whole event (small, loads instantly). */
+  _preview(id) {
+    return `/api/frigate/notifications/${id}/event_preview.gif`;
+  }
+
   _when(t) {
     const d = new Date(t * 1000);
     const now = new Date();
@@ -447,6 +460,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
+      .stage img.pv{object-fit:contain;background:#000}
       .stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
       .cliperr{display:flex;align-items:center;justify-content:center;height:100%;
         color:#fff;background:#000;font-size:14px;padding:20px;text-align:center;line-height:1.6}
@@ -464,6 +478,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .playbtn svg{display:block;margin-left:2px}
       .playbtn.fs{right:56px}
       .playbtn.fs svg{margin-left:0}
+      .playbtn.hd{right:56px;font-size:11px;font-weight:700;letter-spacing:.5px;line-height:1}
       .thumbs{display:flex;gap:8px;overflow-x:auto;padding:0 12px 12px}
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
@@ -520,6 +535,8 @@ class FrigateDeliveryCard extends HTMLElement {
       const media =
         this._playing === true
           ? `<video id="clipvid" controls autoplay playsinline></video>`
+          : this._playing === "preview"
+          ? `<img class="pv" src="${this._preview(ev.id)}" alt="preview">`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -539,7 +556,9 @@ class FrigateDeliveryCard extends HTMLElement {
               : ""
           }
           ${
-            this._playing
+            this._playing === "preview"
+              ? `<button class="playbtn hd" id="hd" title="Full quality (needs fast connection)">HD</button>`
+              : this._playing
               ? ""
               : `<button class="playbtn fs" id="fs" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></button>`
           }
@@ -573,6 +592,17 @@ class FrigateDeliveryCard extends HTMLElement {
         q("#fs").onclick = (e) => {
           e.stopPropagation();
           this._lightbox(ev.id);
+        };
+      if (q("#hd"))
+        q("#hd").onclick = (e) => {
+          e.stopPropagation();
+          this._startHd(ev.id);
+        };
+      const pv = q(".pv");
+      if (pv)
+        pv.onerror = () => {
+          // no preview available (older Frigate/integration) - go straight to HD
+          if (this._playing === "preview") this._startHd(ev.id);
         };
       if (q("#play"))
         q("#play").onclick = (e) => {
