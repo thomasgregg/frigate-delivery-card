@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.9.0";
+const FDC_VERSION = "1.9.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -187,9 +187,11 @@ class FrigateDeliveryCard extends HTMLElement {
     this._idx = 0;
     this._filter = null;
     this._hover = false;
-    this._playing = false; // false | "loading" | true (clip playing inline) | "error" (no clip)
-    this._clipUrl = null;  // blob object URL of the fully loaded clip
-    this._clipFor = null;  // event id the blob belongs to
+    this._playing = false;    // false | true (clip playing inline) | "error" (no clip)
+    this._clipUrl = null;     // current video src (stream URL, then blob URL once buffered)
+    this._clipBlobUrl = null; // object URL of the fully buffered clip (for cleanup)
+    this._clipFor = null;     // event id the clip belongs to
+    this._clipAbort = null;   // AbortController for background buffering
   }
 
   getCardSize() {
@@ -318,32 +320,56 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
 
-  /** Fully download the clip, then play it from memory - gives the player a real
-   *  duration and instant seeking (the proxied stream has neither). */
-  async _startClip(id) {
+  /** Hybrid clip playback: start streaming immediately, and download the full clip
+   *  in the background. Once buffered, swap the fully loaded copy into the player
+   *  (preserving position) - from then on the player has a real duration and instant
+   *  seeking (the proxied stream has neither). On a LAN the swap happens within a
+   *  couple of seconds; on a remote connection playback still starts instantly. */
+  _startClip(id) {
     this._stopClip();
-    this._playing = "loading";
     this._clipFor = id;
+    this._clipUrl = this._clip(id); // stream right away
+    this._playing = true;
     this._render();
+    this._bufferClip(id);
+  }
+
+  async _bufferClip(id) {
+    const ctrl = new AbortController();
+    this._clipAbort = ctrl;
     try {
-      const res = await fetch(this._clip(id));
+      const res = await fetch(this._clip(id), { signal: ctrl.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
-      if (this._playing !== "loading" || this._clipFor !== id) return; // user moved on
-      this._clipUrl = URL.createObjectURL(blob);
-      this._playing = true;
+      if (this._clipFor !== id || this._playing !== true) return; // user moved on
+      const url = URL.createObjectURL(blob);
+      this._clipBlobUrl = url;
+      this._clipUrl = url;
+      const vid = this.shadowRoot && this.shadowRoot.querySelector("#clipvid");
+      if (vid) {
+        const t = vid.currentTime;
+        const paused = vid.paused;
+        vid.src = url;
+        vid.currentTime = t;
+        if (!paused) vid.play().catch(() => {});
+      }
     } catch (e) {
-      if (this._clipFor !== id) return;
-      this._playing = "error";
+      /* background buffering is best-effort - streaming playback continues */
+    } finally {
+      if (this._clipAbort === ctrl) this._clipAbort = null;
     }
-    this._render();
   }
 
   _stopClip() {
-    if (this._clipUrl) {
-      URL.revokeObjectURL(this._clipUrl);
-      this._clipUrl = null;
+    if (this._clipAbort) {
+      this._clipAbort.abort();
+      this._clipAbort = null;
     }
+    if (this._clipBlobUrl) {
+      URL.revokeObjectURL(this._clipBlobUrl);
+      this._clipBlobUrl = null;
+    }
+    this._clipUrl = null;
     this._clipFor = null;
     this._playing = false;
   }
@@ -466,8 +492,6 @@ class FrigateDeliveryCard extends HTMLElement {
       const media =
         this._playing === true
           ? `<video id="clipvid" src="${this._clipUrl}" controls autoplay playsinline></video>`
-          : this._playing === "loading"
-          ? `<div class="cliperr">Loading clip&hellip;</div>`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -535,7 +559,13 @@ class FrigateDeliveryCard extends HTMLElement {
       const vid = q("#clipvid");
       if (vid) {
         vid.onended = () => { this._stopClip(); this._render(); };
-        vid.onerror = () => { this._stopClip(); this._playing = "error"; this._render(); };
+        vid.onerror = () => {
+          // only treat as "no clip" if the stream itself failed (not a mid-swap hiccup)
+          if (this._clipBlobUrl) return;
+          this._stopClip();
+          this._playing = "error";
+          this._render();
+        };
       }
       b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
