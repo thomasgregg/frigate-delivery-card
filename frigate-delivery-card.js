@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.9.1";
+const FDC_VERSION = "1.10.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -187,11 +187,9 @@ class FrigateDeliveryCard extends HTMLElement {
     this._idx = 0;
     this._filter = null;
     this._hover = false;
-    this._playing = false;    // false | true (clip playing inline) | "error" (no clip)
-    this._clipUrl = null;     // current video src (stream URL, then blob URL once buffered)
-    this._clipBlobUrl = null; // object URL of the fully buffered clip (for cleanup)
-    this._clipFor = null;     // event id the clip belongs to
-    this._clipAbort = null;   // AbortController for background buffering
+    this._playing = false; // false | true (clip playing inline) | "error" (no clip)
+    this._clipFor = null;  // event id the clip belongs to
+    this._hls = null;      // hls.js instance while a clip is playing
   }
 
   getCardSize() {
@@ -320,56 +318,86 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
 
-  /** Hybrid clip playback: start streaming immediately, and download the full clip
-   *  in the background. Once buffered, swap the fully loaded copy into the player
-   *  (preserving position) - from then on the player has a real duration and instant
-   *  seeking (the proxied stream has neither). On a LAN the swap happens within a
-   *  couple of seconds; on a remote connection playback still starts instantly. */
+  /** Clip playback via Frigate's HLS VOD endpoint. The recording is served in
+   *  ~10s segments: the real duration is known immediately, seeking fetches only
+   *  the segments you jump to, and playback buffers ahead instead of downloading
+   *  the whole file - smooth even on slow remote connections (e.g. Nabu Casa).
+   *  Falls back to the plain clip.mp4 stream if VOD is unavailable. */
   _startClip(id) {
     this._stopClip();
     this._clipFor = id;
-    this._clipUrl = this._clip(id); // stream right away
     this._playing = true;
     this._render();
-    this._bufferClip(id);
+    this._loadClip(id);
   }
 
-  async _bufferClip(id) {
-    const ctrl = new AbortController();
-    this._clipAbort = ctrl;
+  async _loadClip(id) {
     try {
-      const res = await fetch(this._clip(id), { signal: ctrl.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
+      // sign the VOD playlist path; the Frigate integration pre-signs every
+      // segment URL inside the returned playlist, so no further auth is needed
+      const signed = await this._hass.callWS({
+        type: "auth/sign_path",
+        path: `/api/frigate/vod/event/${id}/index.m3u8`,
+        expires: 3600,
+      });
       if (this._clipFor !== id || this._playing !== true) return; // user moved on
-      const url = URL.createObjectURL(blob);
-      this._clipBlobUrl = url;
-      this._clipUrl = url;
+      const probe = await fetch(signed.path);
+      if (this._clipFor !== id || this._playing !== true) return;
+      if (!probe.ok) throw new Error(`vod HTTP ${probe.status}`);
       const vid = this.shadowRoot && this.shadowRoot.querySelector("#clipvid");
-      if (vid) {
-        const t = vid.currentTime;
-        const paused = vid.paused;
-        vid.src = url;
-        vid.currentTime = t;
-        if (!paused) vid.play().catch(() => {});
+      if (!vid) return;
+      if (vid.canPlayType("application/vnd.apple.mpegurl")) {
+        vid.src = signed.path; // Safari: native HLS
+        return;
       }
+      const Hls = await FrigateDeliveryCard._hlsLib();
+      if (this._clipFor !== id || this._playing !== true) return;
+      if (Hls && Hls.isSupported()) {
+        this._hls = new Hls({ maxBufferLength: 60, backBufferLength: 30 });
+        this._hls.loadSource(signed.path);
+        this._hls.attachMedia(vid);
+        this._hls.on(Hls.Events.ERROR, (_e, data) => {
+          if (data && data.fatal) this._clipFallback(id);
+        });
+        return;
+      }
+      throw new Error("HLS not supported");
     } catch (e) {
-      /* background buffering is best-effort - streaming playback continues */
-    } finally {
-      if (this._clipAbort === ctrl) this._clipAbort = null;
+      this._clipFallback(id);
     }
+  }
+
+  /** Plain progressive stream of the full-quality clip (LAN-friendly fallback). */
+  _clipFallback(id) {
+    if (this._clipFor !== id || this._playing !== true) return;
+    if (this._hls) {
+      this._hls.destroy();
+      this._hls = null;
+    }
+    const vid = this.shadowRoot && this.shadowRoot.querySelector("#clipvid");
+    if (vid) vid.src = this._clip(id);
+  }
+
+  /** Lazy-load hls.js once, shared by all card instances. */
+  static _hlsLib() {
+    if (window.Hls) return Promise.resolve(window.Hls);
+    if (!FrigateDeliveryCard._hlsPromise) {
+      FrigateDeliveryCard._hlsPromise = new Promise((resolve) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js";
+        s.onload = () => resolve(window.Hls || null);
+        s.onerror = () => resolve(null);
+        document.head.appendChild(s);
+      });
+    }
+    return FrigateDeliveryCard._hlsPromise;
   }
 
   _stopClip() {
-    if (this._clipAbort) {
-      this._clipAbort.abort();
-      this._clipAbort = null;
+    if (this._hls) {
+      this._hls.destroy();
+      this._hls = null;
     }
-    if (this._clipBlobUrl) {
-      URL.revokeObjectURL(this._clipBlobUrl);
-      this._clipBlobUrl = null;
-    }
-    this._clipUrl = null;
     this._clipFor = null;
     this._playing = false;
   }
@@ -491,7 +519,7 @@ class FrigateDeliveryCard extends HTMLElement {
           : "";
       const media =
         this._playing === true
-          ? `<video id="clipvid" src="${this._clipUrl}" controls autoplay playsinline></video>`
+          ? `<video id="clipvid" controls autoplay playsinline></video>`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -560,8 +588,8 @@ class FrigateDeliveryCard extends HTMLElement {
       if (vid) {
         vid.onended = () => { this._stopClip(); this._render(); };
         vid.onerror = () => {
-          // only treat as "no clip" if the stream itself failed (not a mid-swap hiccup)
-          if (this._clipBlobUrl) return;
+          if (this._hls) return; // hls.js handles its own errors (with mp4 fallback)
+          if (!vid.src) return;  // no source attached yet
           this._stopClip();
           this._playing = "error";
           this._render();
