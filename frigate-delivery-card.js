@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.7.0";
+const FDC_VERSION = "1.8.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -187,6 +187,7 @@ class FrigateDeliveryCard extends HTMLElement {
     this._idx = 0;
     this._filter = null;
     this._hover = false;
+    this._playing = false; // false | true (clip playing inline) | "error" (no clip)
   }
 
   getCardSize() {
@@ -232,7 +233,7 @@ class FrigateDeliveryCard extends HTMLElement {
     const s = Number(this._cfg.slideshow);
     if (s > 0)
       this._show = setInterval(() => {
-        if (!this._hover && this._list().length > 1) {
+        if (!this._hover && !this._playing && this._list().length > 1) {
           this._idx = (this._idx + 1) % this._list().length;
           this._render();
         }
@@ -298,7 +299,7 @@ class FrigateDeliveryCard extends HTMLElement {
     } catch (e) {
       this._err = (e && e.message) || "Frigate query failed";
     }
-    this._render();
+    if (!this._playing) this._render(); // don't interrupt inline clip playback on refresh
   }
 
   _list() {
@@ -359,6 +360,9 @@ class FrigateDeliveryCard extends HTMLElement {
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
+      .stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+      .cliperr{display:flex;align-items:center;justify-content:center;height:100%;
+        color:#fff;background:#000;font-size:14px;padding:20px;text-align:center;line-height:1.6}
       .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 14px 10px;color:#fff;font-size:14px;font-weight:500;
         background:linear-gradient(transparent,rgba(0,0,0,.65));display:flex;justify-content:space-between;align-items:baseline}
       .cap .badge{font-size:12px}
@@ -424,18 +428,34 @@ class FrigateDeliveryCard extends HTMLElement {
               )
               .join("")}</div>`
           : "";
+      const media =
+        this._playing === true
+          ? `<video id="clipvid" src="${this._clip(ev.id)}" controls autoplay playsinline></video>`
+          : this._playing === "error"
+          ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
+          : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
       const stage = `
         <div class="stage" id="stage">
-          <img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">
+          ${media}
           ${
             list.length > 1
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
               : ""
           }
-          ${this._cfg.clips ? `<button class="playbtn" id="play" title="Play clip"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>` : ""}
-          <div class="cap"><span class="badge" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
-              ev.t
-            )} &#183; ${this._idx + 1}/${list.length}</span></div>
+          ${
+            this._cfg.clips
+              ? this._playing
+                ? `<button class="playbtn" id="play" title="Back to image"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></button>`
+                : `<button class="playbtn" id="play" title="Play clip"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>`
+              : ""
+          }
+          ${
+            this._playing === true
+              ? ""
+              : `<div class="cap"><span class="badge" style="${this._badge(ev.co)}">${ev.co}</span><span>${this._when(
+                  ev.t
+                )} &#183; ${this._idx + 1}/${list.length}</span></div>`
+          }
         </div>`;
       const thumbs =
         view === "reel"
@@ -449,13 +469,24 @@ class FrigateDeliveryCard extends HTMLElement {
       b.innerHTML = chips + tl + stage + thumbs;
       const go = (i) => {
         this._idx = (i + list.length) % list.length;
+        this._playing = false;
         this._render();
       };
       const q = (s) => b.querySelector(s);
       if (q("#prev")) q("#prev").onclick = (e) => { e.stopPropagation(); go(this._idx - 1); };
       if (q("#next")) q("#next").onclick = (e) => { e.stopPropagation(); go(this._idx + 1); };
-      if (q("#stage")) q("#stage").onclick = () => this._lightbox(ev.id);
-      if (q("#play")) q("#play").onclick = (e) => { e.stopPropagation(); this._clipbox(ev.id); };
+      if (q("#stage") && !this._playing) q("#stage").onclick = () => this._lightbox(ev.id);
+      if (q("#play"))
+        q("#play").onclick = (e) => {
+          e.stopPropagation();
+          this._playing = this._playing ? false : true;
+          this._render();
+        };
+      const vid = q("#clipvid");
+      if (vid) {
+        vid.onended = () => { this._playing = false; this._render(); };
+        vid.onerror = () => { this._playing = "error"; this._render(); };
+      }
       b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       const onPill = b.querySelector(".pill.on");
@@ -466,6 +497,7 @@ class FrigateDeliveryCard extends HTMLElement {
         (el.onclick = () => {
           this._filter = el.dataset.co || null;
           this._idx = 0;
+          this._playing = false;
           this._render();
         })
     );
@@ -479,26 +511,6 @@ class FrigateDeliveryCard extends HTMLElement {
     this.shadowRoot.appendChild(d);
   }
 
-  /** Lightbox playing the event's recorded clip (requires record enabled in Frigate). */
-  _clipbox(id) {
-    const d = document.createElement("div");
-    d.className = "lb";
-    const v = document.createElement("video");
-    v.src = this._clip(id);
-    v.controls = true;
-    v.autoplay = true;
-    v.playsInline = true;
-    v.onerror = () => {
-      d.innerHTML = `<div class="lbmsg">No clip available for this event.<br>
-        Clips require <b>record</b> to be enabled in Frigate and only exist for events
-        recorded after it was turned on.</div>`;
-    };
-    d.appendChild(v);
-    d.onclick = (e) => {
-      if (e.target !== v) d.remove();
-    };
-    this.shadowRoot.appendChild(d);
-  }
 }
 
 customElements.define("frigate-delivery-card", FrigateDeliveryCard);
