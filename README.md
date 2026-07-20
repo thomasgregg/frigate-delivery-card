@@ -17,7 +17,8 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Two views** — `reel` (slideshow + thumbnail strip) and `timeline` (brand-colored time pills above the slideshow)
 - **Brand-colored badges** for known couriers (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx) on captions, chips, rows and timeline pills
 - **Sort order** — newest first (default) or oldest first
-- **Inline clip playback** — a &#9654; button swaps the image for the event's recorded clip, playing right inside the card; &#10005; or clip end returns to the image (requires `record:` enabled in Frigate; hide with `clips: false`)
+- **Inline clip playback** — a &#9654; button swaps the image for the event's recorded clip, playing right inside the card with full seeking (the clip is preloaded, so the player knows its real duration); &#10005; or clip end returns to the image (requires `record:` enabled in Frigate; hide with `clips: false`)
+- **Fullscreen button** — a &#x26F6; button opens the still image full-screen; the video player has its own native fullscreen control
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover

@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.8.1";
+const FDC_VERSION = "1.9.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -187,7 +187,9 @@ class FrigateDeliveryCard extends HTMLElement {
     this._idx = 0;
     this._filter = null;
     this._hover = false;
-    this._playing = false; // false | true (clip playing inline) | "error" (no clip)
+    this._playing = false; // false | "loading" | true (clip playing inline) | "error" (no clip)
+    this._clipUrl = null;  // blob object URL of the fully loaded clip
+    this._clipFor = null;  // event id the blob belongs to
   }
 
   getCardSize() {
@@ -209,6 +211,7 @@ class FrigateDeliveryCard extends HTMLElement {
   disconnectedCallback() {
     if (this._poll) clearInterval(this._poll);
     if (this._mid) clearTimeout(this._mid);
+    this._stopClip();
     this._stopShow();
     this._poll = null;
     this._mid = null;
@@ -315,6 +318,36 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
 
+  /** Fully download the clip, then play it from memory - gives the player a real
+   *  duration and instant seeking (the proxied stream has neither). */
+  async _startClip(id) {
+    this._stopClip();
+    this._playing = "loading";
+    this._clipFor = id;
+    this._render();
+    try {
+      const res = await fetch(this._clip(id));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      if (this._playing !== "loading" || this._clipFor !== id) return; // user moved on
+      this._clipUrl = URL.createObjectURL(blob);
+      this._playing = true;
+    } catch (e) {
+      if (this._clipFor !== id) return;
+      this._playing = "error";
+    }
+    this._render();
+  }
+
+  _stopClip() {
+    if (this._clipUrl) {
+      URL.revokeObjectURL(this._clipUrl);
+      this._clipUrl = null;
+    }
+    this._clipFor = null;
+    this._playing = false;
+  }
+
   _clip(id) {
     return `/api/frigate/notifications/${id}/clip.mp4`;
   }
@@ -375,6 +408,8 @@ class FrigateDeliveryCard extends HTMLElement {
         display:flex;align-items:center;justify-content:center;transition:background .15s ease}
       .playbtn:hover{background:rgba(0,0,0,.78)}
       .playbtn svg{display:block;margin-left:2px}
+      .playbtn.fs{right:56px}
+      .playbtn.fs svg{margin-left:0}
       .thumbs{display:flex;gap:8px;overflow-x:auto;padding:0 12px 12px}
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
@@ -430,7 +465,9 @@ class FrigateDeliveryCard extends HTMLElement {
           : "";
       const media =
         this._playing === true
-          ? `<video id="clipvid" src="${this._clip(ev.id)}" controls autoplay playsinline></video>`
+          ? `<video id="clipvid" src="${this._clipUrl}" controls autoplay playsinline></video>`
+          : this._playing === "loading"
+          ? `<div class="cliperr">Loading clip&hellip;</div>`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -448,6 +485,11 @@ class FrigateDeliveryCard extends HTMLElement {
                 ? `<button class="playbtn" id="play" title="Back to image"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></button>`
                 : `<button class="playbtn" id="play" title="Play clip"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>`
               : ""
+          }
+          ${
+            this._playing
+              ? ""
+              : `<button class="playbtn fs" id="fs" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></button>`
           }
           ${
             this._playing === true
@@ -469,23 +511,31 @@ class FrigateDeliveryCard extends HTMLElement {
       b.innerHTML = chips + tl + stage + thumbs;
       const go = (i) => {
         this._idx = (i + list.length) % list.length;
-        this._playing = false;
+        this._stopClip();
         this._render();
       };
       const q = (s) => b.querySelector(s);
       if (q("#prev")) q("#prev").onclick = (e) => { e.stopPropagation(); go(this._idx - 1); };
       if (q("#next")) q("#next").onclick = (e) => { e.stopPropagation(); go(this._idx + 1); };
-      if (q("#stage") && !this._playing) q("#stage").onclick = () => this._lightbox(ev.id);
+      if (q("#fs"))
+        q("#fs").onclick = (e) => {
+          e.stopPropagation();
+          this._lightbox(ev.id);
+        };
       if (q("#play"))
         q("#play").onclick = (e) => {
           e.stopPropagation();
-          this._playing = this._playing ? false : true;
-          this._render();
+          if (this._playing) {
+            this._stopClip();
+            this._render();
+          } else {
+            this._startClip(ev.id);
+          }
         };
       const vid = q("#clipvid");
       if (vid) {
-        vid.onended = () => { this._playing = false; this._render(); };
-        vid.onerror = () => { this._playing = "error"; this._render(); };
+        vid.onended = () => { this._stopClip(); this._render(); };
+        vid.onerror = () => { this._stopClip(); this._playing = "error"; this._render(); };
       }
       b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
@@ -497,7 +547,7 @@ class FrigateDeliveryCard extends HTMLElement {
         (el.onclick = () => {
           this._filter = el.dataset.co || null;
           this._idx = 0;
-          this._playing = false;
+          this._stopClip();
           this._render();
         })
     );
