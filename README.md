@@ -190,6 +190,54 @@ Why these settings:
 - **`post_capture: 15`** — extends each event clip 15 s past the detection, so the clip actually shows where the package was left, not just the van arriving.
 - **Detect at a decent resolution** (e.g. 1280×720) — logo recognition needs pixels; very low detect resolutions miss small or distant logos.
 
+## Example automation
+
+The card pairs nicely with a notification automation on the same events. This one listens to Frigate's MQTT topic and fires exactly once per delivery — when the courier sub_label is *newly* assigned to the vehicle:
+
+```yaml
+alias: Delivery Driver
+description: Announce and notify when a courier logo is detected
+mode: single
+max_exceeded: silent
+triggers:
+  - trigger: mqtt
+    topic: frigate/events
+conditions:
+  - condition: time
+    after: "07:00:00"
+    before: "22:00:00"
+  - condition: template
+    # Fire only when the courier sub_label is NEWLY assigned. Frigate re-publishes
+    # updates for tracked objects continuously - without this transition check, a
+    # parked van with a visible logo re-triggers on every update.
+    value_template: >
+      {% set p = trigger.payload_json %}
+      {% set targets = ['dhl', 'dpd', 'gls', 'ups', 'amazon', 'fedex', 'usps',
+                        'postnl', 'postnord', 'royal_mail', 'an_post',
+                        'canada_post', 'purolator', 'nzpost'] %}
+      {% set sl = p.after.sub_label %}
+      {% set a = ((sl[0] if sl is not string else sl) | lower | trim) if sl is not none else '' %}
+      {% set bsl = p.before.sub_label if p.before is defined and p.before else none %}
+      {% set b = ((bsl[0] if bsl is not string else bsl) | lower | trim) if bsl is not none else '' %}
+      {{ p.after.camera == 'entrance' and a in targets and b not in targets }}
+actions:
+  - variables:
+      company: >-
+        {{ (trigger.payload_json.after.sub_label[0]
+            if trigger.payload_json.after.sub_label is not string
+            else trigger.payload_json.after.sub_label) | lower | trim }}
+  - action: notify.mobile_app_your_phone
+    data:
+      title: "🚚 {{ company | upper }} has arrived!"
+      message: "Frigate detected the {{ company | upper }} logo at the entrance."
+      data:
+        image: "/api/frigate/notifications/{{ trigger.payload_json.after.id }}/thumbnail.jpg"
+  - delay:
+      minutes: 5
+```
+
+`mode: single` plus the final delay acts as a cooldown, so one delivery produces one notification even while the van stays in view.
+
 ## Troubleshooting
 
 - **"No matching events"** — check that events in the window actually carry the sub_label (Frigate UI → Explore → filter by sub label).
