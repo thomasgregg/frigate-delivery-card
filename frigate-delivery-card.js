@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.12.0";
+const FDC_VERSION = "1.13.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -189,7 +189,6 @@ class FrigateDeliveryCard extends HTMLElement {
     this._hover = false;
     this._playing = false; // false | true (clip playing inline) | "error" (no clip)
     this._clipFor = null;  // event id the clip belongs to
-    this._hls = null;      // hls.js instance while a clip is playing
   }
 
   getCardSize() {
@@ -318,167 +317,24 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
 
-  /** &#9654; plays the event PREVIEW first: Frigate's low-res fast-forward render
-   *  of the whole event (~100 KB) - loads in well under a second even on slow
-   *  remote connections. The HD button switches to the full-quality recording. */
+  /** Inline playback of the full-quality clip as a plain progressive stream -
+   *  starts within a couple of seconds and plays at full resolution. The
+   *  scrubber only covers what has buffered so far; that's the honest trade-off
+   *  of progressive streaming through the HA proxy (no range-request support). */
   _startClip(id) {
-    this._stopClip();
-    this._clipFor = id;
-    this._playing = "preview";
-    this._render();
-  }
-
-  /** Frigate's preview GIF is a raw ~1 fps timelapse that plays back far too
-   *  fast. Where the browser supports it (Chrome/Edge), decode the GIF frames
-   *  and re-play them on a canvas slowed down to a watchable pace. Falls back
-   *  to the plain (fast) GIF elsewhere. */
-  async _runPreview(id) {
-    const token = (this._pvToken = (this._pvToken || 0) + 1);
-    const alive = () => this._pvToken === token && this._playing === "preview" && this._clipFor === id;
-    const sr = this.shadowRoot;
-    const fallbackImg = () => {
-      const c = sr && sr.querySelector("#pvc");
-      if (!c || !alive()) return;
-      const img = document.createElement("img");
-      img.className = "pv";
-      img.onerror = () => { if (alive()) this._startHd(id); };
-      img.src = this._preview(id);
-      c.replaceWith(img);
-    };
-    try {
-      if (!("ImageDecoder" in window)) return fallbackImg();
-      const res = await fetch(this._preview(id));
-      if (!res.ok) { if (alive()) this._startHd(id); return; }
-      const buf = await res.arrayBuffer();
-      if (!alive()) return;
-      const dec = new ImageDecoder({ data: buf, type: "image/gif" });
-      await dec.tracks.ready;
-      const count = dec.tracks.selectedTrack.frameCount;
-      if (!count) return fallbackImg();
-      const canvas = sr && sr.querySelector("#pvc");
-      if (!canvas || !alive()) return;
-      const ctx = canvas.getContext("2d");
-      const slow = Number(this._cfg.preview_slowdown) > 0 ? Number(this._cfg.preview_slowdown) : 3;
-      let i = 0;
-      const step = async () => {
-        if (!alive()) { dec.close(); return; }
-        try {
-          const { image } = await dec.decode({ frameIndex: i });
-          if (!alive()) { image.close(); dec.close(); return; }
-          if (canvas.width !== image.displayWidth) {
-            canvas.width = image.displayWidth;
-            canvas.height = image.displayHeight;
-          }
-          ctx.drawImage(image, 0, 0);
-          const frameMs = image.duration ? image.duration / 1000 : 60;
-          image.close();
-          i = (i + 1) % count;
-          this._pvTimer = setTimeout(step, Math.max(frameMs, 20) * slow);
-        } catch (e) {
-          dec.close();
-          fallbackImg();
-        }
-      };
-      step();
-    } catch (e) {
-      fallbackImg();
-    }
-  }
-
-  /** Full-quality playback via Frigate's HLS VOD endpoint: real duration known
-   *  immediately, seeking fetches only the segments you jump to. Note the
-   *  recording bitrate must fit your connection - best on LAN. */
-  _startHd(id) {
     this._stopClip();
     this._clipFor = id;
     this._playing = true;
     this._render();
-    this._loadClip(id);
-  }
-
-  async _loadClip(id) {
-    try {
-      // sign the VOD playlist path; the Frigate integration pre-signs every
-      // segment URL inside the returned playlist, so no further auth is needed
-      const signed = await this._hass.callWS({
-        type: "auth/sign_path",
-        path: `/api/frigate/vod/event/${id}/index.m3u8`,
-        expires: 3600,
-      });
-      if (this._clipFor !== id || this._playing !== true) return; // user moved on
-      const probe = await fetch(signed.path);
-      if (this._clipFor !== id || this._playing !== true) return;
-      if (!probe.ok) throw new Error(`vod HTTP ${probe.status}`);
-      const vid = this.shadowRoot && this.shadowRoot.querySelector("#clipvid");
-      if (!vid) return;
-      if (vid.canPlayType("application/vnd.apple.mpegurl")) {
-        vid.src = signed.path; // Safari: native HLS
-        return;
-      }
-      const Hls = await FrigateDeliveryCard._hlsLib();
-      if (this._clipFor !== id || this._playing !== true) return;
-      if (Hls && Hls.isSupported()) {
-        this._hls = new Hls({ maxBufferLength: 60, backBufferLength: 30 });
-        this._hls.loadSource(signed.path);
-        this._hls.attachMedia(vid);
-        this._hls.on(Hls.Events.ERROR, (_e, data) => {
-          if (data && data.fatal) this._clipFallback(id);
-        });
-        return;
-      }
-      throw new Error("HLS not supported");
-    } catch (e) {
-      this._clipFallback(id);
-    }
-  }
-
-  /** Plain progressive stream of the full-quality clip (LAN-friendly fallback). */
-  _clipFallback(id) {
-    if (this._clipFor !== id || this._playing !== true) return;
-    if (this._hls) {
-      this._hls.destroy();
-      this._hls = null;
-    }
-    const vid = this.shadowRoot && this.shadowRoot.querySelector("#clipvid");
-    if (vid) vid.src = this._clip(id);
-  }
-
-  /** Lazy-load hls.js once, shared by all card instances. */
-  static _hlsLib() {
-    if (window.Hls) return Promise.resolve(window.Hls);
-    if (!FrigateDeliveryCard._hlsPromise) {
-      FrigateDeliveryCard._hlsPromise = new Promise((resolve) => {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js";
-        s.onload = () => resolve(window.Hls || null);
-        s.onerror = () => resolve(null);
-        document.head.appendChild(s);
-      });
-    }
-    return FrigateDeliveryCard._hlsPromise;
   }
 
   _stopClip() {
-    if (this._hls) {
-      this._hls.destroy();
-      this._hls = null;
-    }
-    if (this._pvTimer) {
-      clearTimeout(this._pvTimer);
-      this._pvTimer = null;
-    }
-    this._pvToken = (this._pvToken || 0) + 1; // invalidates any running preview loop
     this._clipFor = null;
     this._playing = false;
   }
 
   _clip(id) {
     return `/api/frigate/notifications/${id}/clip.mp4`;
-  }
-
-  /** Low-res fast-forward preview of the whole event (small, loads instantly). */
-  _preview(id) {
-    return `/api/frigate/notifications/${id}/event_preview.gif`;
   }
 
   _when(t) {
@@ -522,7 +378,6 @@ class FrigateDeliveryCard extends HTMLElement {
       .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
-      .stage .pv{width:100%;height:100%;object-fit:contain;background:#000;display:block}
       .stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
       .cliperr{display:flex;align-items:center;justify-content:center;height:100%;
         color:#fff;background:#000;font-size:14px;padding:20px;text-align:center;line-height:1.6}
@@ -540,7 +395,6 @@ class FrigateDeliveryCard extends HTMLElement {
       .playbtn svg{display:block;margin-left:2px}
       .playbtn.fs{right:56px}
       .playbtn.fs svg{margin-left:0}
-      .playbtn.hd{right:56px;font-size:11px;font-weight:700;letter-spacing:.5px;line-height:1}
       .thumbs{display:flex;gap:8px;overflow-x:auto;padding:0 12px 12px}
       .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
@@ -596,9 +450,7 @@ class FrigateDeliveryCard extends HTMLElement {
           : "";
       const media =
         this._playing === true
-          ? `<video id="clipvid" controls autoplay playsinline></video>`
-          : this._playing === "preview"
-          ? `<canvas class="pv" id="pvc"></canvas>`
+          ? `<video id="clipvid" src="${this._clip(ev.id)}" controls autoplay playsinline></video>`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -618,9 +470,7 @@ class FrigateDeliveryCard extends HTMLElement {
               : ""
           }
           ${
-            this._playing === "preview"
-              ? `<button class="playbtn hd" id="hd" title="Full quality (needs fast connection)">HD</button>`
-              : this._playing
+            this._playing
               ? ""
               : `<button class="playbtn fs" id="fs" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></button>`
           }
@@ -655,12 +505,6 @@ class FrigateDeliveryCard extends HTMLElement {
           e.stopPropagation();
           this._lightbox(ev.id);
         };
-      if (q("#hd"))
-        q("#hd").onclick = (e) => {
-          e.stopPropagation();
-          this._startHd(ev.id);
-        };
-      if (q("#pvc")) this._runPreview(ev.id);
       if (q("#play"))
         q("#play").onclick = (e) => {
           e.stopPropagation();
@@ -675,8 +519,6 @@ class FrigateDeliveryCard extends HTMLElement {
       if (vid) {
         vid.onended = () => { this._stopClip(); this._render(); };
         vid.onerror = () => {
-          if (this._hls) return; // hls.js handles its own errors (with mp4 fallback)
-          if (!vid.src) return;  // no source attached yet
           this._stopClip();
           this._playing = "error";
           this._render();
