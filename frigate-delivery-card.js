@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.13.0";
+const FDC_VERSION = "1.13.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -517,7 +517,7 @@ class FrigateDeliveryCard extends HTMLElement {
         };
       const vid = q("#clipvid");
       if (vid) {
-        vid.onended = () => { this._stopClip(); this._render(); };
+        // on clip end the player stays open - replay via the native controls, close via the X
         vid.onerror = () => {
           this._stopClip();
           this._playing = "error";
