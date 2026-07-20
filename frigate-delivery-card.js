@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.13.1";
+const FDC_VERSION = "1.14.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -404,6 +404,8 @@ class FrigateDeliveryCard extends HTMLElement {
       .lb img{max-width:96vw;max-height:96vh;border-radius:6px}
       .lb video{max-width:96vw;max-height:96vh;border-radius:6px;cursor:default}
       .lbmsg{color:#fff;text-align:center;font-size:14px;line-height:1.7;padding:24px;max-width:420px}
+      .lb .playbtn{position:absolute;top:16px;right:16px}
+      .lb .playbtn.lbplay{right:64px}
     </style><ha-card><div id="body"></div></ha-card>`;
     r.host.addEventListener("mouseenter", () => (this._hover = true));
     r.host.addEventListener("mouseleave", () => (this._hover = false));
@@ -543,8 +545,42 @@ class FrigateDeliveryCard extends HTMLElement {
   _lightbox(id) {
     const d = document.createElement("div");
     d.className = "lb";
-    d.innerHTML = `<img src="${this._img(id)}" onerror="this.onerror=null;this.src='${this._thumb(id)}'">`;
+    d.innerHTML = `
+      <img src="${this._img(id)}" onerror="this.onerror=null;this.src='${this._thumb(id)}'">
+      ${
+        this._cfg.clips
+          ? `<button class="playbtn lbplay" title="Play clip"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>`
+          : ""
+      }
+      <button class="playbtn lbclose" title="Close"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></button>`;
     d.onclick = () => d.remove();
+    d.querySelector(".lbclose").onclick = (e) => {
+      e.stopPropagation();
+      d.remove();
+    };
+    const pb = d.querySelector(".lbplay");
+    if (pb)
+      pb.onclick = (e) => {
+        e.stopPropagation();
+        const img = d.querySelector("img");
+        if (img) img.remove();
+        pb.remove();
+        const v = document.createElement("video");
+        v.src = this._clip(id);
+        v.controls = true;
+        v.autoplay = true;
+        v.playsInline = true;
+        v.onclick = (ev2) => ev2.stopPropagation(); // clicking the player must not close the overlay
+        v.onerror = () => {
+          v.replaceWith(
+            Object.assign(document.createElement("div"), {
+              className: "lbmsg",
+              innerHTML: "No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.",
+            })
+          );
+        };
+        d.insertBefore(v, d.querySelector(".lbclose"));
+      };
     this.shadowRoot.appendChild(d);
   }
 
