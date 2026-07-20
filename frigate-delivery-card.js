@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.8.0";
+const FDC_VERSION = "1.8.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -438,7 +438,7 @@ class FrigateDeliveryCard extends HTMLElement {
         <div class="stage" id="stage">
           ${media}
           ${
-            list.length > 1
+            list.length > 1 && !this._playing
               ? `<button class="nav prev" id="prev">&#8249;</button><button class="nav next" id="next">&#8250;</button>`
               : ""
           }
