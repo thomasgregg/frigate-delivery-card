@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.16.1";
+const FDC_VERSION = "1.17.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -345,6 +345,28 @@ class FrigateDeliveryCard extends HTMLElement {
     return `/api/frigate/notifications/${id}/clip.mp4`;
   }
 
+  /** Pick the right clip source for this browser. Safari/iOS (incl. the HA
+   *  companion app) refuses progressive MP4 from servers without range-request
+   *  support - which the HA proxy lacks - but plays Frigate's HLS VOD natively.
+   *  Everything else streams the MP4 directly. The HLS playlist path is signed
+   *  via auth/sign_path; the Frigate integration pre-signs every segment URL. */
+  async _clipSrc(id) {
+    const probe = document.createElement("video");
+    if (probe.canPlayType("application/vnd.apple.mpegurl")) {
+      try {
+        const signed = await this._hass.callWS({
+          type: "auth/sign_path",
+          path: `/api/frigate/vod/event/${id}/index.m3u8`,
+          expires: 3600,
+        });
+        return signed.path;
+      } catch (e) {
+        /* fall back to progressive */
+      }
+    }
+    return this._clip(id);
+  }
+
   _when(t) {
     const d = new Date(t * 1000);
     const now = new Date();
@@ -460,7 +482,7 @@ class FrigateDeliveryCard extends HTMLElement {
           : "";
       const media =
         this._playing === true
-          ? `<video id="clipvid" src="${this._clip(ev.id)}" controls autoplay playsinline></video>`
+          ? `<video id="clipvid" controls autoplay playsinline></video>`
           : this._playing === "error"
           ? `<div class="cliperr">No clip available for this event.<br>Clips require <b>record</b> to be enabled in Frigate.</div>`
           : `<img src="${this._img(ev.id)}" alt="${ev.co}" onerror="this.onerror=null;this.src='${this._thumb(ev.id)}'">`;
@@ -529,8 +551,12 @@ class FrigateDeliveryCard extends HTMLElement {
         };
       const vid = q("#clipvid");
       if (vid) {
+        this._clipSrc(ev.id).then((src) => {
+          if (this._playing === true && this._clipFor === ev.id && vid.isConnected) vid.src = src;
+        });
         // on clip end the player stays open - replay via the native controls, close via the X
         vid.onerror = () => {
+          if (!vid.src) return; // source not attached yet
           this._stopClip();
           this._playing = "error";
           this._render();
@@ -576,12 +602,12 @@ class FrigateDeliveryCard extends HTMLElement {
         if (img) img.remove();
         pb.remove();
         const v = document.createElement("video");
-        v.src = this._clip(id);
         v.controls = true;
         v.autoplay = true;
         v.playsInline = true;
         v.onclick = (ev2) => ev2.stopPropagation(); // clicking the player must not close the overlay
         v.onerror = () => {
+          if (!v.src) return; // source not attached yet
           v.replaceWith(
             Object.assign(document.createElement("div"), {
               className: "lbmsg",
@@ -590,6 +616,9 @@ class FrigateDeliveryCard extends HTMLElement {
           );
         };
         d.insertBefore(v, d.querySelector(".lbclose"));
+        this._clipSrc(id).then((src) => {
+          if (v.isConnected) v.src = src;
+        });
       };
     this.shadowRoot.appendChild(d);
   }

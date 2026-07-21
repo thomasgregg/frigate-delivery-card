@@ -16,7 +16,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Two views** — `reel` (slideshow + thumbnail strip) and `timeline` (brand-colored time pills above the slideshow)
 - **Brand-colored badges** for every courier the Frigate+ model supports (DHL, DPD, GLS, UPS, Amazon, Hermes, FedEx, USPS, PostNL, PostNord, Royal Mail, An Post, Canada Post, Purolator, NZ Post) on captions, chips and timeline pills; unknown couriers fall back to theme colors
 - **Sort order** — newest first (default) or oldest first
-- **Inline clip playback** — a ▶ button plays the event's full-quality recorded clip right inside the card, streamed progressively so playback starts within seconds. The player stays open at clip end (replay via the controls); ✕ returns to the image. Requires `record:` enabled in Frigate; hide with `clips: false`
+- **Inline clip playback** — a ▶ button plays the event's full-quality recorded clip right inside the card, streamed progressively so playback starts within seconds. On Safari/iOS (including the Home Assistant companion app) clips play via Frigate's native HLS recordings instead, since iOS can't play progressive video through the HA proxy. The player stays open at clip end (replay via the controls); ✕ returns to the image. Requires `record:` enabled in Frigate; hide with `clips: false`
 - **Fullscreen view** — a ⛶ button (or simply tapping the image) opens the still image enlarged, with its own ▶ button to play the clip at full size
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
