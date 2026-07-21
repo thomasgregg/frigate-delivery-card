@@ -231,7 +231,10 @@ actions:
       title: "🚚 {{ company | upper }} has arrived!"
       message: "Frigate detected the {{ company | upper }} logo at the entrance."
       data:
-        image: "/api/frigate/notifications/{{ trigger.payload_json.after.id }}/thumbnail.jpg"
+        # Use the EVENT SNAPSHOT (the best detection frame - the same image the
+        # card shows), NOT a live camera grab: the logo is often confirmed only
+        # after the vehicle has moved on, so a live image may show an empty street.
+        image: "/api/frigate/notifications/{{ trigger.payload_json.after.id }}/snapshot.jpg"
   - delay:
       minutes: 5
 ```
@@ -246,6 +249,10 @@ actions:
 - **"Unable to find Frigate instance"** — set `instance_id` to your Frigate client id (only relevant with multiple Frigate instances).
 - **Sub_labels are case-sensitive as stored by Frigate** — the card lowercases companies for chips, but the query filter must match what Frigate stores (Frigate+ logo labels are lowercase).
 - **Clip seeking is limited while loading** — clips stream progressively through the HA proxy (no range-request support), so the scrubber covers the buffered portion; full quality is prioritized over instant seeking.
+
+## A note on privacy & legality
+
+Camera surveillance is regulated differently around the world. In many countries (including Germany and much of the EU), **recording public streets, sidewalks, or your neighbor's property is restricted or illegal** — video surveillance is generally only permitted on your own private grounds, and areas beyond it may need to be excluded. Before pointing a camera at your entrance, check your local laws, consider masking out public areas (Frigate supports motion masks and zones for this), and be transparent with visitors where required. This project only displays what your Frigate installation records — the legal responsibility for what you record lies with you.
 
 ## Credits
 
