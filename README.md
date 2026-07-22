@@ -22,7 +22,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
-- **Filter chips** per company/sub_label with live event counts
+- **Filter chips** per company/sub_label with live event counts; tapping the active chip clears the filter, the OTHER chip always comes last, and the ALL chip can be hidden with `show_all: false`
 - **Time-range based** — rolling window (e.g. last 24 h) or **today only** (since local midnight); retention is handled entirely by your Frigate settings
 - **Auto-refresh** (default every 2 minutes)
 - Also filters by `labels` and `zones`, so it doubles as e.g. a *"person at the mailbox"* card
@@ -68,6 +68,7 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `view` | string | `reel` | `reel` or `timeline` |
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
 | `clips` | boolean | `true` | Show the ▶ clip-playback button (requires Frigate `record:` enabled) |
+| `show_all` | boolean | `true` | Show the ALL filter chip (total count + one-tap filter reset). With `false`, tap the active chip to clear the filter |
 | `unrecognized` | boolean | `false` | Also show vehicle stops without a courier logo as an "unrecognized" category |
 | `unrecognized_min_duration` | number | `30` | Minimum stop duration in seconds to count as an OTHER stop (also in the visual editor) |
 | `period` | string | `hours` | Time range: `hours` (rolling look-back window) or `today` (since local midnight) |

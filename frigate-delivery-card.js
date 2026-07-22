@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.20.0";
+const FDC_VERSION = "1.21.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -66,6 +66,7 @@ const FDC_SCHEMA = [
     },
   },
   { name: "clips", selector: { boolean: {} } },
+  { name: "show_all", selector: { boolean: {} } },
   { name: "unrecognized", selector: { boolean: {} } },
   {
     name: "period",
@@ -101,6 +102,7 @@ const FDC_LABELS = {
   view: "View",
   sort: "Sort order",
   clips: "Clip playback button (requires 'record' enabled in Frigate)",
+  show_all: "Show the ALL filter chip",
   unrecognized: "Show OTHER stops (vehicles that parked 30s+ without a courier logo)",
   period: "Time range",
   hours: "Look back (hours, only used for rolling window)",
@@ -144,6 +146,7 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       view: "reel",
       sort: "newest",
       clips: true,
+      show_all: true,
       period: "hours",
       hours: 24,
       slideshow: 6,
@@ -185,6 +188,7 @@ class FrigateDeliveryCard extends HTMLElement {
         view: "reel",       // "reel" | "timeline"
         sort: "newest",     // "newest" | "oldest"
         clips: true,        // show the clip playback button (requires record enabled in Frigate)
+        show_all: true,     // show the ALL filter chip (total count + one-tap filter reset)
         unrecognized: false, // also show long vehicle stops without a courier logo
         unrecognized_min_duration: 30, // seconds a vehicle must stay to count as a stop
         period: "hours",    // "hours" = rolling window | "today" = since local midnight
@@ -476,10 +480,16 @@ class FrigateDeliveryCard extends HTMLElement {
     }
     const view = this._cfg.view;
     const list = this._list();
-    const companies = [...new Set(this._events.map((e) => e.co))];
+    const companies = [...new Set(this._events.map((e) => e.co))].sort(
+      (a, b) => (a === "other") - (b === "other") // "other" always last, courier order otherwise unchanged
+    );
     const chips = this._events.length && view !== "timeline"
       ? `<div class="chips">
-          <button class="chip all ${this._filter ? "" : "on"}" data-co="">${this._filter ? "" : "&#10003; "}All (${this._events.length})</button>
+          ${
+            this._cfg.show_all !== false
+              ? `<button class="chip all ${this._filter ? "" : "on"}" data-co="">${this._filter ? "" : "&#10003; "}All (${this._events.length})</button>`
+              : ""
+          }
           ${companies
             .map(
               (c) =>
@@ -596,7 +606,8 @@ class FrigateDeliveryCard extends HTMLElement {
     b.querySelectorAll(".chip").forEach(
       (el) =>
         (el.onclick = () => {
-          this._filter = el.dataset.co || null;
+          const co = el.dataset.co || null;
+          this._filter = co === this._filter ? null : co; // tapping the active chip clears the filter
           this._idx = 0;
           this._stopClip();
           this._render();
