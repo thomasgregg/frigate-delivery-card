@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.18.0";
+const FDC_VERSION = "1.19.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -33,7 +33,7 @@ const FDC_COLORS = {
   canada_post: { bg: "#E31837", fg: "#FFFFFF" },
   purolator: { bg: "#003087", fg: "#FFFFFF" },
   nzpost: { bg: "#E4002B", fg: "#FFFFFF" },
-  unrecognized: { bg: "#607D8B", fg: "#FFFFFF" },
+  other: { bg: "#607D8B", fg: "#FFFFFF" },
 };
 
 const FDC_SCHEMA = [
@@ -67,6 +67,7 @@ const FDC_SCHEMA = [
   },
   { name: "clips", selector: { boolean: {} } },
   { name: "unrecognized", selector: { boolean: {} } },
+  { name: "exclude_sub_labels", selector: { text: { multiple: true } } },
   {
     name: "period",
     selector: {
@@ -100,7 +101,8 @@ const FDC_LABELS = {
   view: "View",
   sort: "Sort order",
   clips: "Clip playback button (requires 'record' enabled in Frigate)",
-  unrecognized: "Show unrecognized stops (vehicles that parked 30s+ without a courier logo)",
+  unrecognized: "Show OTHER stops (vehicles that parked 30s+ without a courier logo)",
+  exclude_sub_labels: "Exclude sub labels (own cars' plate names, e.g. Flitzer)",
   period: "Time range",
   hours: "Look back (hours, only used for rolling window)",
   slideshow: "Slideshow interval (s, 0 = off)",
@@ -185,6 +187,7 @@ class FrigateDeliveryCard extends HTMLElement {
         clips: true,        // show the clip playback button (requires record enabled in Frigate)
         unrecognized: false, // also show long vehicle stops without a courier logo
         unrecognized_min_duration: 30, // seconds a vehicle must stay to count as a stop
+        exclude_sub_labels: null, // e.g. own cars' known_plates names - suppresses "other" stops seen on any camera around the same time
         period: "hours",    // "hours" = rolling window | "today" = since local midnight
         hours: 24,          // only used when period === "hours"
         limit: 100,
@@ -303,12 +306,34 @@ class FrigateDeliveryCard extends HTMLElement {
         delete msg2.sub_labels;
         let res2 = await this._hass.callWS(msg2);
         if (typeof res2 === "string") res2 = JSON.parse(res2);
+        // Cross-reference the owner's cars: an unlabeled stop is suppressed when
+        // one of the excluded sub_labels (e.g. own known_plates names) was seen
+        // on ANY camera within +/-3 minutes - the entrance camera often can't
+        // read a plate that the carport camera identifies seconds later.
+        let ownWindows = [];
+        if (Array.isArray(c.exclude_sub_labels) && c.exclude_sub_labels.length) {
+          const msg3 = {
+            type: "frigate/events/get",
+            instance_id: c.instance_id,
+            after: this._after() - 600,
+            limit: c.limit,
+            sub_labels: c.exclude_sub_labels,
+          };
+          let res3 = await this._hass.callWS(msg3);
+          if (typeof res3 === "string") res3 = JSON.parse(res3);
+          ownWindows = (Array.isArray(res3) ? res3 : []).map((e) => [
+            e.start_time,
+            e.end_time || Date.now() / 1000,
+          ]);
+        }
+        const MARGIN = 180;
         const seen = new Set(raw.map((e) => e.id));
         const minDur = Number(c.unrecognized_min_duration) > 0 ? Number(c.unrecognized_min_duration) : 30;
         for (const e of Array.isArray(res2) ? res2 : []) {
           if (seen.has(e.id) || e.sub_label) continue; // already listed / recognized as something else
-          const dur = (e.end_time || Date.now() / 1000) - e.start_time;
-          if (dur < minDur) continue; // drive-by, not a stop
+          const end = e.end_time || Date.now() / 1000;
+          if (end - e.start_time < minDur) continue; // drive-by, not a stop
+          if (ownWindows.some(([os, oe]) => os <= end + MARGIN && oe >= e.start_time - MARGIN)) continue; // owner's car
           raw.push({ ...e, __unrecognized: true });
         }
       }
@@ -316,7 +341,7 @@ class FrigateDeliveryCard extends HTMLElement {
         .map((e) => ({
           id: e.id,
           co: e.__unrecognized
-            ? "unrecognized"
+            ? "other"
             : String(Array.isArray(e.sub_label) ? e.sub_label[0] : e.sub_label || e.label || "")
                 .split(",")[0]
                 .trim()
