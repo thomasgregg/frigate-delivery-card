@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.22.2";
+const FDC_VERSION = "1.23.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -38,7 +38,19 @@ const FDC_COLORS = {
 
 const FDC_SCHEMA = [
   { name: "camera", required: true, selector: { text: {} } },
-  { name: "sub_labels", selector: { text: { multiple: true } } },
+  {
+    name: "sub_labels",
+    selector: {
+      select: {
+        multiple: true,
+        custom_value: true,
+        options: [
+          "dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl",
+          "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost", "hermes",
+        ],
+      },
+    },
+  },
   {
     name: "",
     type: "expandable",
@@ -125,23 +137,31 @@ const FDC_SCHEMA = [
     title: "Advanced",
     icon: "mdi:tune",
     schema: [
-      { name: "labels", selector: { text: { multiple: true } } },
-      { name: "zones", selector: { text: { multiple: true } } },
+      {
+        name: "labels",
+        selector: {
+          select: { multiple: true, custom_value: true, options: ["person", "car", "package", "bicycle", "motorcycle"] },
+        },
+      },
+      {
+        name: "zones",
+        selector: { select: { multiple: true, custom_value: true, options: [] } },
+      },
       { name: "instance_id", selector: { text: {} } },
     ],
   },
 ];
 
 const FDC_HELPERS = {
-  sub_labels: "e.g. dhl, ups - leave empty to disable sub_label filtering",
+  sub_labels: "Pick couriers or type custom values - leave empty to disable sub_label filtering",
   labels: "optional, e.g. person",
-  zones: "optional, e.g. mailbox",
+  zones: "optional, type your Frigate zone names, e.g. mailbox",
   camera: "as named in your Frigate config",
 };
 
 const FDC_LABELS = {
   camera: "Frigate camera name (as in Frigate config)",
-  sub_labels: "Courier / sub label",
+  sub_labels: "Couriers / sub labels",
   view: "View",
   sort: "Sort order",
   show_all: "Show the ALL filter chip",
@@ -153,8 +173,8 @@ const FDC_LABELS = {
   limit: "Max events",
   unrecognized: "Show stops without a courier logo as OTHER",
   unrecognized_min_duration: "Minimum stop duration (s)",
-  labels: "Label",
-  zones: "Zone",
+  labels: "Labels",
+  zones: "Zones",
   instance_id: "Frigate instance id",
 };
 
