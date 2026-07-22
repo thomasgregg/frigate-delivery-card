@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.17.0";
+const FDC_VERSION = "1.18.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -33,6 +33,7 @@ const FDC_COLORS = {
   canada_post: { bg: "#E31837", fg: "#FFFFFF" },
   purolator: { bg: "#003087", fg: "#FFFFFF" },
   nzpost: { bg: "#E4002B", fg: "#FFFFFF" },
+  unrecognized: { bg: "#607D8B", fg: "#FFFFFF" },
 };
 
 const FDC_SCHEMA = [
@@ -65,6 +66,7 @@ const FDC_SCHEMA = [
     },
   },
   { name: "clips", selector: { boolean: {} } },
+  { name: "unrecognized", selector: { boolean: {} } },
   {
     name: "period",
     selector: {
@@ -98,6 +100,7 @@ const FDC_LABELS = {
   view: "View",
   sort: "Sort order",
   clips: "Clip playback button (requires 'record' enabled in Frigate)",
+  unrecognized: "Show unrecognized stops (vehicles that parked 30s+ without a courier logo)",
   period: "Time range",
   hours: "Look back (hours, only used for rolling window)",
   slideshow: "Slideshow interval (s, 0 = off)",
@@ -180,6 +183,8 @@ class FrigateDeliveryCard extends HTMLElement {
         view: "reel",       // "reel" | "timeline"
         sort: "newest",     // "newest" | "oldest"
         clips: true,        // show the clip playback button (requires record enabled in Frigate)
+        unrecognized: false, // also show long vehicle stops without a courier logo
+        unrecognized_min_duration: 30, // seconds a vehicle must stay to count as a stop
         period: "hours",    // "hours" = rolling window | "today" = since local midnight
         hours: 24,          // only used when period === "hours"
         limit: 100,
@@ -288,15 +293,34 @@ class FrigateDeliveryCard extends HTMLElement {
     try {
       let res = await this._hass.callWS(msg);
       if (typeof res === "string") res = JSON.parse(res);
-      const evs = (Array.isArray(res) ? res : [])
+      let raw = Array.isArray(res) ? res : [];
+      // Optionally include UNRECOGNIZED stops: vehicles that parked long enough
+      // to plausibly be a delivery (unbranded subcontractor vans etc.) but got
+      // no courier sub_label. Second query without the sub_label filter; only
+      // events with no sub_label at all and a minimum duration are added.
+      if (c.unrecognized && Array.isArray(c.sub_labels) && c.sub_labels.length) {
+        const msg2 = { ...msg, labels: ["car"] };
+        delete msg2.sub_labels;
+        let res2 = await this._hass.callWS(msg2);
+        if (typeof res2 === "string") res2 = JSON.parse(res2);
+        const seen = new Set(raw.map((e) => e.id));
+        const minDur = Number(c.unrecognized_min_duration) > 0 ? Number(c.unrecognized_min_duration) : 30;
+        for (const e of Array.isArray(res2) ? res2 : []) {
+          if (seen.has(e.id) || e.sub_label) continue; // already listed / recognized as something else
+          const dur = (e.end_time || Date.now() / 1000) - e.start_time;
+          if (dur < minDur) continue; // drive-by, not a stop
+          raw.push({ ...e, __unrecognized: true });
+        }
+      }
+      const evs = raw
         .map((e) => ({
           id: e.id,
-          co: String(
-            Array.isArray(e.sub_label) ? e.sub_label[0] : e.sub_label || e.label || ""
-          )
-            .split(",")[0]
-            .trim()
-            .toLowerCase(),
+          co: e.__unrecognized
+            ? "unrecognized"
+            : String(Array.isArray(e.sub_label) ? e.sub_label[0] : e.sub_label || e.label || "")
+                .split(",")[0]
+                .trim()
+                .toLowerCase(),
           t: e.start_time,
         }))
         .filter((e) => e.id && e.co)
