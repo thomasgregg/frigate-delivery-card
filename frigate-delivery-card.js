@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.22.1";
+const FDC_VERSION = "1.22.2";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -173,13 +173,10 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       this._form.computeLabel = (s) => FDC_LABELS[s.name] || s.name;
       this._form.computeHelper = (s) => FDC_HELPERS[s.name];
       this._form.addEventListener("value-changed", (ev) => {
+        // NOTE: do not strip empty entries here - the "+ Add" button appends an
+        // empty row, and sanitizing it away made the first click appear dead.
+        // Empty/whitespace entries are cleaned in the card's setConfig instead.
         const cfg = { ...this._config, ...ev.detail.value };
-        for (const k of ["sub_labels", "labels", "zones"]) {
-          if (Array.isArray(cfg[k])) {
-            cfg[k] = cfg[k].map((v) => String(v).trim()).filter((v) => v);
-            if (!cfg[k].length && k !== "sub_labels") delete cfg[k];
-          }
-        }
         this._config = cfg;
         this.dispatchEvent(
           new CustomEvent("config-changed", { detail: { config: cfg }, bubbles: true, composed: true })
@@ -247,6 +244,13 @@ class FrigateDeliveryCard extends HTMLElement {
       },
       cfg
     );
+    // clean whitespace/empty entries left over from editing in the visual editor
+    for (const k of ["sub_labels", "labels", "zones"]) {
+      if (Array.isArray(this._cfg[k])) {
+        this._cfg[k] = this._cfg[k].map((v) => String(v).trim()).filter((v) => v);
+        if (!this._cfg[k].length && k !== "sub_labels") this._cfg[k] = null;
+      }
+    }
     if (!["reel", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel"; // list/combined removed in 1.5.0
     if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
     this._cfg.clips = this._cfg.clips !== false;
@@ -721,7 +725,12 @@ window.customCards.push({
   type: "frigate-delivery-card",
   name: "Frigate Delivery Card",
   description:
-    "Frigate event snapshots filtered by sub_label (delivery companies, faces, plates) with slideshow, list view, filter chips and lightbox.",
+    "Frigate event snapshots filtered by sub_label (delivery companies, faces, plates) with slideshow, timeline, filter chips and clip playback.",
+});
+window.customCards.push({
+  type: "delivery-reel-card",
+  name: "Frigate Delivery Card (legacy name)",
+  description: "Legacy element name of the Frigate Delivery Card - same card, kept for old configs.",
 });
 
 console.info(
