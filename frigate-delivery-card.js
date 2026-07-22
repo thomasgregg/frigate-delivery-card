@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.23.0";
+const FDC_VERSION = "1.23.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -45,8 +45,10 @@ const FDC_SCHEMA = [
         multiple: true,
         custom_value: true,
         options: [
+          // every courier logo the current Frigate+ model supports (hermes is
+          // still only a candidate label - type it manually if you need it)
           "dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl",
-          "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost", "hermes",
+          "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost",
         ],
       },
     },
