@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.23.1";
+const FDC_VERSION = "1.23.2";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -191,6 +191,11 @@ class FrigateDeliveryCardEditor extends HTMLElement {
   }
   _render() {
     if (!this._form) {
+      // give focus/press rings of inner controls room to render - without this
+      // the rounded outline of e.g. the courier picker gets clipped at the edges
+      this.style.display = "block";
+      this.style.padding = "0 4px 4px";
+      this.style.overflow = "visible";
       this._form = document.createElement("ha-form");
       this._form.computeLabel = (s) => FDC_LABELS[s.name] || s.name;
       this._form.computeHelper = (s) => FDC_HELPERS[s.name];
