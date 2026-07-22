@@ -18,7 +18,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Sort order** — newest first (default) or oldest first
 - **Inline clip playback** — a ▶ button plays the event's full-quality recorded clip right inside the card, streamed progressively so playback starts within seconds. On Safari/iOS (including the Home Assistant companion app) clips play via Frigate's native HLS recordings instead, since iOS can't play progressive video through the HA proxy. The player stays open at clip end (replay via the controls); ✕ returns to the image. Requires `record:` enabled in Frigate; hide with `clips: false`
 - **Fullscreen view** — a ⛶ button (or simply tapping the image) opens the still image enlarged, with its own ▶ button to play the clip at full size
-- **"Other" stops** (optional, `unrecognized: true`) — also show vehicles that stopped for 30+ seconds without any courier logo, as a gray **OTHER** category. Catches unbranded subcontractor vans (looking at you, Amazon DSPs) that no logo model can identify. Tune with `unrecognized_min_duration: <seconds>`. With `exclude_sub_labels: [YourCar]` the card cross-references your own cars' `known_plates` names: an unlabeled stop is hidden when one of them was recognized on any camera within ±3 minutes — so your own arrivals don't clutter the card even if the main camera can't read plates
+- **"Other" stops** (optional, `unrecognized: true`) — also show vehicles that stopped without any courier logo, as a gray **OTHER** category. Catches unbranded subcontractor vans (looking at you, Amazon DSPs) that no logo model can identify. The minimum stop duration (`unrecognized_min_duration`, default 30 s) is configurable in the visual editor and filters out drive-bys
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
@@ -69,8 +69,7 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
 | `clips` | boolean | `true` | Show the ▶ clip-playback button (requires Frigate `record:` enabled) |
 | `unrecognized` | boolean | `false` | Also show vehicle stops without a courier logo as an "unrecognized" category |
-| `unrecognized_min_duration` | number | `30` | Minimum stop duration in seconds to count as unrecognized |
-| `exclude_sub_labels` | list | – | Own cars' `known_plates` names; suppresses "other" stops seen on any camera within ±3 min |
+| `unrecognized_min_duration` | number | `30` | Minimum stop duration in seconds to count as an OTHER stop (also in the visual editor) |
 | `period` | string | `hours` | Time range: `hours` (rolling look-back window) or `today` (since local midnight) |
 | `hours` | number | `24` | Look-back window in hours (only used when `period: hours`) |
 | `limit` | number | `100` | Maximum events to fetch |
