@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.23.2";
+const FDC_VERSION = "1.24.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -43,10 +43,10 @@ const FDC_SCHEMA = [
     selector: {
       select: {
         multiple: true,
-        custom_value: true,
+        mode: "list",
         options: [
           // every courier logo the current Frigate+ model supports (hermes is
-          // still only a candidate label - type it manually if you need it)
+          // still only a candidate label - add it via YAML if you need it)
           "dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl",
           "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost",
         ],
@@ -142,20 +142,17 @@ const FDC_SCHEMA = [
       {
         name: "labels",
         selector: {
-          select: { multiple: true, custom_value: true, options: ["person", "car", "package", "bicycle", "motorcycle"] },
+          select: { multiple: true, mode: "list", options: ["person", "car", "package", "bicycle", "motorcycle"] },
         },
       },
-      {
-        name: "zones",
-        selector: { select: { multiple: true, custom_value: true, options: [] } },
-      },
+      { name: "zones", selector: { text: { multiple: true } } },
       { name: "instance_id", selector: { text: {} } },
     ],
   },
 ];
 
 const FDC_HELPERS = {
-  sub_labels: "Pick couriers or type custom values - leave empty to disable sub_label filtering",
+  sub_labels: "Untick all to disable sub_label filtering; custom values can be added via YAML",
   labels: "optional, e.g. person",
   zones: "optional, type your Frigate zone names, e.g. mailbox",
   camera: "as named in your Frigate config",
