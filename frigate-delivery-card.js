@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.24.1";
+const FDC_VERSION = "1.25.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -33,6 +33,7 @@ const FDC_COLORS = {
   canada_post: { bg: "#E31837", fg: "#FFFFFF" },
   purolator: { bg: "#003087", fg: "#FFFFFF" },
   nzpost: { bg: "#E4002B", fg: "#FFFFFF" },
+  person: { bg: "#00897B", fg: "#FFFFFF" },
   other: { bg: "#607D8B", fg: "#FFFFFF" },
 };
 
@@ -126,11 +127,12 @@ const FDC_SCHEMA = [
   {
     name: "",
     type: "expandable",
-    title: "OTHER stops (vehicles without a courier logo)",
-    icon: "mdi:truck-alert-outline",
+    title: "Extra categories (OTHER & PERSON)",
+    icon: "mdi:shape-plus",
     schema: [
       { name: "unrecognized", selector: { boolean: {} } },
       { name: "unrecognized_min_duration", selector: { number: { min: 5, max: 600, mode: "box" } } },
+      { name: "persons", selector: { boolean: {} } },
     ],
   },
   {
@@ -173,8 +175,9 @@ const FDC_LABELS = {
   period: "Time range",
   hours: "Look back (hours, rolling window only)",
   limit: "Max events",
-  unrecognized: "Show stops without a courier logo as OTHER",
-  unrecognized_min_duration: "Minimum stop duration (s)",
+  unrecognized: "OTHER: show vehicle stops without a courier logo",
+  unrecognized_min_duration: "OTHER: minimum stop duration (s)",
+  persons: "PERSON: show all person events",
   labels: "Labels",
   zones: "Zones",
   instance_id: "Frigate instance id",
@@ -219,6 +222,7 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       show_all: true,
       unrecognized: false,
       unrecognized_min_duration: 30,
+      persons: false,
       period: "hours",
       hours: 24,
       slideshow: 6,
@@ -263,6 +267,7 @@ class FrigateDeliveryCard extends HTMLElement {
         show_all: true,     // show the ALL filter chip (total count + one-tap filter reset)
         unrecognized: false, // also show long vehicle stops without a courier logo
         unrecognized_min_duration: 30, // seconds a vehicle must stay to count as a stop
+        persons: false,     // also show every person event as a PERSON category
         period: "hours",    // "hours" = rolling window | "today" = since local midnight
         hours: 24,          // only used when period === "hours"
         limit: 100,
@@ -397,10 +402,26 @@ class FrigateDeliveryCard extends HTMLElement {
           raw.push({ ...e, __unrecognized: true });
         }
       }
+      // Optionally include ALL person events as their own PERSON category
+      // (couriers' drivers included - person and car events are separate
+      // objects in Frigate and cannot be linked).
+      if (c.persons && Array.isArray(c.sub_labels) && c.sub_labels.length) {
+        const msg3 = { ...msg, labels: ["person"] };
+        delete msg3.sub_labels;
+        let res3 = await this._hass.callWS(msg3);
+        if (typeof res3 === "string") res3 = JSON.parse(res3);
+        const seenP = new Set(raw.map((e) => e.id));
+        for (const e of Array.isArray(res3) ? res3 : []) {
+          if (seenP.has(e.id)) continue;
+          raw.push({ ...e, __person: true });
+        }
+      }
       const evs = raw
         .map((e) => ({
           id: e.id,
-          co: e.__unrecognized
+          co: e.__person
+            ? "person"
+            : e.__unrecognized
             ? "other"
             : String(Array.isArray(e.sub_label) ? e.sub_label[0] : e.sub_label || e.label || "")
                 .split(",")[0]
@@ -559,9 +580,8 @@ class FrigateDeliveryCard extends HTMLElement {
     }
     const view = this._cfg.view;
     const list = this._list();
-    const companies = [...new Set(this._events.map((e) => e.co))].sort(
-      (a, b) => (a === "other") - (b === "other") // "other" always last, courier order otherwise unchanged
-    );
+    const rank = (x) => (x === "other" ? 2 : x === "person" ? 1 : 0); // couriers, then PERSON, then OTHER
+    const companies = [...new Set(this._events.map((e) => e.co))].sort((a, b) => rank(a) - rank(b));
     const chips = this._events.length && view !== "timeline"
       ? `<div class="chips">
           ${
