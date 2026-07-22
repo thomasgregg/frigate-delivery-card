@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.22.0";
+const FDC_VERSION = "1.22.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -132,9 +132,16 @@ const FDC_SCHEMA = [
   },
 ];
 
+const FDC_HELPERS = {
+  sub_labels: "e.g. dhl, ups - leave empty to disable sub_label filtering",
+  labels: "optional, e.g. person",
+  zones: "optional, e.g. mailbox",
+  camera: "as named in your Frigate config",
+};
+
 const FDC_LABELS = {
   camera: "Frigate camera name (as in Frigate config)",
-  sub_labels: "Couriers / sub labels (e.g. dhl, ups - empty = no sub_label filter)",
+  sub_labels: "Courier / sub label",
   view: "View",
   sort: "Sort order",
   show_all: "Show the ALL filter chip",
@@ -146,8 +153,8 @@ const FDC_LABELS = {
   limit: "Max events",
   unrecognized: "Show stops without a courier logo as OTHER",
   unrecognized_min_duration: "Minimum stop duration (s)",
-  labels: "Labels (optional, e.g. person)",
-  zones: "Zones (optional, e.g. mailbox)",
+  labels: "Label",
+  zones: "Zone",
   instance_id: "Frigate instance id",
 };
 
@@ -164,6 +171,7 @@ class FrigateDeliveryCardEditor extends HTMLElement {
     if (!this._form) {
       this._form = document.createElement("ha-form");
       this._form.computeLabel = (s) => FDC_LABELS[s.name] || s.name;
+      this._form.computeHelper = (s) => FDC_HELPERS[s.name];
       this._form.addEventListener("value-changed", (ev) => {
         const cfg = { ...this._config, ...ev.detail.value };
         for (const k of ["sub_labels", "labels", "zones"]) {
