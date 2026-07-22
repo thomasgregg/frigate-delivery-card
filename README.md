@@ -20,7 +20,7 @@ Built for the classic use case: a **Frigate+ model recognizes delivery company l
 - **Fullscreen view** — a ⛶ button (or simply tapping the image) opens the still image enlarged, with its own ▶ button to play the clip at full size
 - **"Other" stops** (optional, `unrecognized: true`) — also show vehicles that stopped without any courier logo, as a gray **OTHER** category. Catches unbranded subcontractor vans (looking at you, Amazon DSPs) that no logo model can identify. The minimum stop duration (`unrecognized_min_duration`, default 30 s) is configurable in the visual editor and filters out drive-bys
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
-- **Visual editor** — full UI configuration in the dashboard card editor, no YAML required
+- **Visual editor** — full UI configuration in the dashboard card editor, no YAML required; options are grouped into collapsible sections (View & playback, Time range, OTHER stops, Advanced)
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
 - **Filter chips** per company/sub_label with live event counts; tapping the active chip clears the filter, the OTHER chip always comes last, and the ALL chip can be hidden with `show_all: false`
 - **Time-range based** — rolling window (e.g. last 24 h) or **today only** (since local midnight); retention is handled entirely by your Frigate settings

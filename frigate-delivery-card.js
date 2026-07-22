@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.21.0";
+const FDC_VERSION = "1.22.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -39,77 +39,115 @@ const FDC_COLORS = {
 const FDC_SCHEMA = [
   { name: "camera", required: true, selector: { text: {} } },
   { name: "sub_labels", selector: { text: { multiple: true } } },
-  { name: "labels", selector: { text: { multiple: true } } },
-  { name: "zones", selector: { text: { multiple: true } } },
   {
-    name: "view",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "reel", label: "Reel (slideshow + thumbnail strip)" },
-          { value: "timeline", label: "Timeline (brand-colored time pills + slideshow)" },
-        ],
-      },
-    },
-  },
-  {
-    name: "sort",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "newest", label: "Newest first" },
-          { value: "oldest", label: "Oldest first" },
-        ],
-      },
-    },
-  },
-  { name: "clips", selector: { boolean: {} } },
-  { name: "show_all", selector: { boolean: {} } },
-  { name: "unrecognized", selector: { boolean: {} } },
-  {
-    name: "period",
-    selector: {
-      select: {
-        mode: "dropdown",
-        options: [
-          { value: "hours", label: "Rolling window (look back N hours)" },
-          { value: "today", label: "Today (since local midnight)" },
-        ],
-      },
-    },
-  },
-  {
-    type: "grid",
     name: "",
+    type: "expandable",
+    title: "View & playback",
+    icon: "mdi:palette-outline",
     schema: [
-      { name: "hours", selector: { number: { min: 1, max: 720, mode: "box" } } },
-      { name: "unrecognized_min_duration", selector: { number: { min: 5, max: 600, mode: "box" } } },
-      { name: "slideshow", selector: { number: { min: 0, max: 60, mode: "box" } } },
-      { name: "limit", selector: { number: { min: 1, max: 500, mode: "box" } } },
-      { name: "refresh", selector: { number: { min: 10, max: 3600, mode: "box" } } },
+      {
+        name: "view",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "reel", label: "Reel (slideshow + thumbnail strip)" },
+              { value: "timeline", label: "Timeline (brand-colored time pills + slideshow)" },
+            ],
+          },
+        },
+      },
+      {
+        name: "sort",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "newest", label: "Newest first" },
+              { value: "oldest", label: "Oldest first" },
+            ],
+          },
+        },
+      },
+      { name: "show_all", selector: { boolean: {} } },
+      { name: "clips", selector: { boolean: {} } },
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "slideshow", selector: { number: { min: 0, max: 60, mode: "box" } } },
+          { name: "refresh", selector: { number: { min: 10, max: 3600, mode: "box" } } },
+        ],
+      },
     ],
   },
-  { name: "instance_id", selector: { text: {} } },
+  {
+    name: "",
+    type: "expandable",
+    title: "Time range",
+    icon: "mdi:clock-outline",
+    schema: [
+      {
+        name: "period",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "hours", label: "Rolling window (look back N hours)" },
+              { value: "today", label: "Today (since local midnight)" },
+            ],
+          },
+        },
+      },
+      {
+        type: "grid",
+        name: "",
+        schema: [
+          { name: "hours", selector: { number: { min: 1, max: 720, mode: "box" } } },
+          { name: "limit", selector: { number: { min: 1, max: 500, mode: "box" } } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "",
+    type: "expandable",
+    title: "OTHER stops (vehicles without a courier logo)",
+    icon: "mdi:truck-alert-outline",
+    schema: [
+      { name: "unrecognized", selector: { boolean: {} } },
+      { name: "unrecognized_min_duration", selector: { number: { min: 5, max: 600, mode: "box" } } },
+    ],
+  },
+  {
+    name: "",
+    type: "expandable",
+    title: "Advanced",
+    icon: "mdi:tune",
+    schema: [
+      { name: "labels", selector: { text: { multiple: true } } },
+      { name: "zones", selector: { text: { multiple: true } } },
+      { name: "instance_id", selector: { text: {} } },
+    ],
+  },
 ];
 
 const FDC_LABELS = {
   camera: "Frigate camera name (as in Frigate config)",
-  sub_labels: "Sub labels (e.g. dhl, ups - empty = no sub_label filter)",
-  labels: "Labels (optional, e.g. person)",
-  zones: "Zones (optional, e.g. mailbox)",
+  sub_labels: "Couriers / sub labels (e.g. dhl, ups - empty = no sub_label filter)",
   view: "View",
   sort: "Sort order",
-  clips: "Clip playback button (requires 'record' enabled in Frigate)",
   show_all: "Show the ALL filter chip",
-  unrecognized: "Show OTHER stops (vehicles that parked 30s+ without a courier logo)",
-  period: "Time range",
-  hours: "Look back (hours, only used for rolling window)",
-  unrecognized_min_duration: "OTHER: min stop duration (s)",
+  clips: "Clip playback button (requires 'record' enabled in Frigate)",
   slideshow: "Slideshow interval (s, 0 = off)",
-  limit: "Max events",
   refresh: "Refresh every (s)",
+  period: "Time range",
+  hours: "Look back (hours, rolling window only)",
+  limit: "Max events",
+  unrecognized: "Show stops without a courier logo as OTHER",
+  unrecognized_min_duration: "Minimum stop duration (s)",
+  labels: "Labels (optional, e.g. person)",
+  zones: "Zones (optional, e.g. mailbox)",
   instance_id: "Frigate instance id",
 };
 
@@ -147,6 +185,8 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       sort: "newest",
       clips: true,
       show_all: true,
+      unrecognized: false,
+      unrecognized_min_duration: 30,
       period: "hours",
       hours: 24,
       slideshow: 6,
