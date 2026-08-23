@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    name: Publish release assets
+    name: Publish card release asset
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -23,19 +23,10 @@ jobs:
             --title "${GITHUB_REF_NAME#v}" \
             --generate-notes
 
-      - name: Build card ZIP
-        run: >-
-          git archive
-          --format=zip
-          --output="$RUNNER_TEMP/frigate-delivery-card.zip"
-          HEAD
-          frigate-delivery-card.js
-
-      - name: Upload card release assets
+      - name: Upload card release asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release upload "$GITHUB_REF_NAME"
           frigate-delivery-card.js
-          "$RUNNER_TEMP/frigate-delivery-card.zip"
           --clobber

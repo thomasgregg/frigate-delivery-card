@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.25.1";
+const FDC_VERSION = "1.25.2";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
