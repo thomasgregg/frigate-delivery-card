@@ -15,18 +15,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "${GITHUB_REF_NAME#v}" \
-            --generate-notes
+      - name: Verify card release asset
+        run: test -s frigate-delivery-card.js
 
-      - name: Upload card release asset
+      - name: Create draft release with card asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release upload "$GITHUB_REF_NAME"
+          gh release create "$GITHUB_REF_NAME"
           frigate-delivery-card.js
-          --clobber
+          --draft
+          --generate-notes
+          --title "${GITHUB_REF_NAME#v}"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest
