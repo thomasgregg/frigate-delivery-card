@@ -14,7 +14,7 @@
  * License: MIT
  */
 
-const FDC_VERSION = "1.25.2";
+const FDC_VERSION = "1.26.0";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
@@ -253,6 +253,7 @@ class FrigateDeliveryCard extends HTMLElement {
     if (!cfg.camera && !cfg.cameras) {
       throw new Error("frigate-delivery-card: please set 'camera' (or 'cameras').");
     }
+    const previousCfg = this._cfg;
     this._cfg = Object.assign(
       {
         instance_id: "frigate",
@@ -286,16 +287,51 @@ class FrigateDeliveryCard extends HTMLElement {
     if (!["reel", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel"; // list/combined removed in 1.5.0
     if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
     this._cfg.clips = this._cfg.clips !== false;
-    this._events = [];
-    this._idx = 0;
-    this._filter = null;
-    this._hover = false;
-    this._playing = false; // false | true (clip playing inline) | "error" (no clip)
-    this._clipFor = null;  // event id the clip belongs to
+    const withoutGridOptions = (config) => {
+      const comparable = { ...config };
+      delete comparable.grid_options;
+      return JSON.stringify(comparable);
+    };
+    const sizingOnly =
+      previousCfg && withoutGridOptions(previousCfg) === withoutGridOptions(this._cfg);
+    if (!sizingOnly) {
+      this._events = [];
+      this._idx = 0;
+      this._filter = null;
+      this._hover = false;
+      this._playing = false; // false | true (clip playing inline) | "error" (no clip)
+      this._clipFor = null;  // event id the clip belongs to
+    }
+
+    // A numeric Sections row count is an explicit height constraint. Remove a
+    // stale editor-detected class when switching back to automatic height; the
+    // observer will add it again if the editor is still clipping the preview.
+    if (this.shadowRoot) {
+      const card = this.shadowRoot.querySelector("ha-card");
+      if (card) card.classList.toggle("fixed-height", this._hasFixedGridRows());
+      this._scheduleResizeCheck();
+    }
+  }
+
+  getGridOptions() {
+    const timeline = this._cfg?.view === "timeline";
+    return {
+      columns: 12,
+      min_columns: 6,
+      rows: "auto",
+      min_rows: timeline ? 3 : 4,
+    };
   }
 
   getCardSize() {
-    return 6;
+    const height = this.shadowRoot
+      ?.querySelector("ha-card")
+      ?.getBoundingClientRect().height;
+    return height > 0 ? Math.max(1, Math.ceil(height / 50)) : 6;
+  }
+
+  connectedCallback() {
+    if (this.shadowRoot) this._startResizeObserver();
   }
 
   set hass(h) {
@@ -318,6 +354,80 @@ class FrigateDeliveryCard extends HTMLElement {
     this._poll = null;
     this._mid = null;
     this._booted = false;
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    this._resizeObserver = null;
+    if (this._resizeFrame) cancelAnimationFrame(this._resizeFrame);
+    this._resizeFrame = null;
+  }
+
+  _hasFixedGridRows() {
+    const rows = this._cfg?.grid_options?.rows;
+    return typeof rows === "number" && Number.isFinite(rows);
+  }
+
+  _startResizeObserver() {
+    if (this._resizeObserver || typeof ResizeObserver === "undefined") return;
+    const card = this.shadowRoot?.querySelector("ha-card");
+    const body = this.shadowRoot?.getElementById("body");
+    if (!card || !body) return;
+    this._resizeObserver = new ResizeObserver(() => this._scheduleResizeCheck());
+    this._resizeObserver.observe(this);
+    this._resizeObserver.observe(card);
+    this._resizeObserver.observe(body);
+    this._scheduleResizeCheck();
+  }
+
+  _scheduleResizeCheck() {
+    if (this._resizeFrame || !this.isConnected) return;
+    this._resizeFrame = requestAnimationFrame(() => {
+      this._resizeFrame = null;
+      this._updateHeightMode();
+    });
+  }
+
+  /**
+   * Detect a height-constrained editor preview without involving rendering or
+   * card state. The observer is deliberately limited to measuring geometry and
+   * toggling one layout class so a resize cannot restart video or data loading.
+   */
+  _updateHeightMode() {
+    const card = this.shadowRoot?.querySelector("ha-card");
+    const body = this.shadowRoot?.getElementById("body");
+    if (!card || !body) return;
+
+    if (this._hasFixedGridRows()) {
+      card.classList.add("fixed-height");
+      return;
+    }
+
+    // Probe the natural layout on every observed size change. The class is
+    // restored in this same animation frame when the editor still constrains
+    // the card, avoiding a sticky compact mode when automatic height returns.
+    card.classList.remove("fixed-height");
+
+    const tolerance = 1;
+    const hostRect = this.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const measured = [body, ...body.children];
+    const cardOutsideHost =
+      cardRect.top < hostRect.top - tolerance ||
+      cardRect.left < hostRect.left - tolerance ||
+      cardRect.right > hostRect.right + tolerance ||
+      cardRect.bottom > hostRect.bottom + tolerance;
+    const outsideCard = measured.some((element) => {
+      const rect = element.getBoundingClientRect();
+      return (
+        rect.top < cardRect.top - tolerance ||
+        rect.left < cardRect.left - tolerance ||
+        rect.right > cardRect.right + tolerance ||
+        rect.bottom > cardRect.bottom + tolerance
+      );
+    });
+    const verticallyClipped = [this, card, body, ...body.children].some(
+      (element) => element.scrollHeight > element.clientHeight + tolerance
+    );
+
+    card.classList.toggle("fixed-height", cardOutsideHost || outsideCard || verticallyClipped);
   }
 
   /** In "today" mode, wipe the reel promptly when the day rolls over. */
@@ -519,47 +629,58 @@ class FrigateDeliveryCard extends HTMLElement {
   _build() {
     const r = this.attachShadow({ mode: "open" });
     r.innerHTML = `<style>
-      ha-card{overflow:hidden}
-      .chips{display:flex;gap:6px;padding:10px 12px 0;flex-wrap:wrap}
-      .chip{border-radius:16px;padding:9px 14px;font-size:12px;cursor:pointer;
+      :host{display:block;width:100%;max-width:100%;min-width:0;height:100%;container-type:inline-size}
+      *,*::before,*::after{box-sizing:border-box}
+      ha-card{width:100%;max-width:100%;min-width:0;height:100%;overflow:hidden}
+      #body,#body>*{min-width:0}
+      .chips{display:flex;gap:clamp(4px,1.2cqi,6px);padding:clamp(7px,2cqi,10px) clamp(8px,2.4cqi,12px) 0;flex-wrap:wrap;min-width:0}
+      .chip{max-width:100%;border-radius:16px;padding:clamp(7px,2cqi,9px) clamp(10px,3cqi,14px);font-size:clamp(11px,2.8cqi,12px);cursor:pointer;
         background:var(--secondary-background-color);color:var(--primary-text-color);
         border:1px solid var(--divider-color);text-transform:uppercase;letter-spacing:.5px;
-        font-weight:700;line-height:1.2}
+        font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;touch-action:manipulation}
       .chip.on{box-shadow:0 0 0 2.5px var(--primary-color)}
       .chip.all.on{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
-      .badge{text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:11px;
-        border-radius:12px;padding:2px 10px;border:1px solid transparent;flex:none}
-      .tl{display:flex;gap:6px;padding:10px 12px 0;overflow-x:auto;
+      .badge{min-width:0;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;letter-spacing:.8px;font-weight:700;font-size:clamp(11px,2.7cqi,12px);
+        border-radius:12px;padding:2px clamp(7px,2.2cqi,10px);border:1px solid transparent;flex:none}
+      .tl{display:flex;gap:clamp(4px,1.2cqi,6px);padding:clamp(7px,2cqi,10px) clamp(8px,2.4cqi,12px) 0;overflow-x:auto;min-width:0;
         scrollbar-width:none;-ms-overflow-style:none}
       .tl::-webkit-scrollbar{display:none}
-      .pill{border-radius:16px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;
+      .pill{border-radius:16px;padding:clamp(7px,2cqi,9px) clamp(10px,3cqi,14px);font-size:clamp(11px,2.8cqi,12px);font-weight:700;cursor:pointer;
         border:1px solid transparent;flex:none;letter-spacing:.5px;line-height:1.2;
-        text-transform:uppercase}
-      .stage{position:relative;margin:10px 12px;border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
+        text-transform:uppercase;white-space:nowrap;touch-action:manipulation}
+      .stage{position:relative;min-width:0;margin:clamp(7px,2cqi,10px) clamp(8px,2.4cqi,12px);border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
       .stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
-      .cliperr{display:flex;align-items:center;justify-content:center;height:100%;
-        color:#fff;background:#000;font-size:14px;padding:20px;text-align:center;line-height:1.6}
-      .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 14px 10px;color:#fff;font-size:14px;font-weight:500;
-        background:linear-gradient(transparent,rgba(0,0,0,.65));display:flex;justify-content:space-between;align-items:baseline}
-      .cap .badge{font-size:12px}
-      .nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
-        background:rgba(0,0,0,.45);color:#fff;border:0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+      .cliperr{display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-width:0;min-height:0;
+        color:#fff;background:#000;font-size:clamp(12px,3cqi,14px);padding:clamp(12px,4cqi,20px);text-align:center;line-height:1.5;overflow:auto}
+      .cap{position:absolute;z-index:1;left:0;right:0;bottom:0;min-width:0;padding:clamp(16px,4cqi,20px) clamp(10px,3cqi,14px) clamp(7px,2cqi,10px);color:#fff;font-size:clamp(12px,3.2cqi,14px);font-weight:500;
+        background:linear-gradient(transparent,rgba(0,0,0,.72));display:flex;gap:8px;justify-content:space-between;align-items:baseline;pointer-events:none}
+      .cap>span:last-child{min-width:0;max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+      .cap .badge{font-size:clamp(11px,2.8cqi,12px)}
+      .nav{position:absolute;z-index:2;top:50%;transform:translateY(-50%);width:clamp(34px,9cqi,40px);height:clamp(34px,9cqi,40px);border-radius:50%;
+        background:rgba(0,0,0,.45);color:#fff;border:0;font-size:clamp(18px,5cqi,22px);cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
       .nav:hover{background:rgba(0,0,0,.7)}
-      .prev{left:8px}.next{right:8px}
-      .playbtn{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;
+      .prev{left:clamp(6px,2cqi,8px)}.next{right:clamp(6px,2cqi,8px)}
+      .playbtn{position:absolute;z-index:2;right:clamp(7px,2.5cqi,10px);top:clamp(7px,2.5cqi,10px);width:clamp(36px,9cqi,40px);height:clamp(36px,9cqi,40px);border-radius:50%;
         background:rgba(0,0,0,.5);color:#fff;border:0;cursor:pointer;padding:0;line-height:0;
-        display:flex;align-items:center;justify-content:center;transition:background .15s ease}
+        display:flex;align-items:center;justify-content:center;transition:background .15s ease;touch-action:manipulation}
       .playbtn:hover{background:rgba(0,0,0,.78)}
       .playbtn svg{display:block;margin-left:2px}
-      .playbtn.fs{right:56px}
+      .playbtn.fs{right:clamp(50px,12cqi,58px)}
       .playbtn.fs svg{margin-left:0}
-      .thumbs{display:flex;gap:8px;overflow-x:auto;padding:0 12px 12px}
-      .thumbs img{width:96px;height:54px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.65;flex:none;
+      .thumbs{display:flex;min-width:0;gap:clamp(5px,1.6cqi,8px);overflow-x:auto;padding:0 clamp(8px,2.4cqi,12px) clamp(8px,2.4cqi,12px)}
+      .thumbs img{width:clamp(72px,22cqi,96px);height:clamp(40px,12.4cqi,54px);object-fit:cover;border-radius:clamp(6px,1.8cqi,8px);cursor:pointer;opacity:.65;flex:none;
         border:2px solid transparent}
       .thumbs img.on{opacity:1;border-color:var(--primary-color)}
-      .empty{padding:28px 16px;text-align:center;color:var(--secondary-text-color)}
+      .empty{min-width:0;padding:clamp(20px,6cqi,28px) clamp(12px,4cqi,16px);font-size:clamp(12px,3.2cqi,14px);line-height:1.45;text-align:center;color:var(--secondary-text-color);overflow-wrap:anywhere}
+      ha-card.fixed-height{container-type:size}
+      ha-card.fixed-height #body{display:flex;flex-direction:column;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden}
+      ha-card.fixed-height .chips{flex:none;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-inline:contain}
+      ha-card.fixed-height .chip{flex:0 0 auto;max-width:calc(100% - 16px)}
+      ha-card.fixed-height .tl,ha-card.fixed-height .thumbs{flex:none;overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain}
+      ha-card.fixed-height .stage{flex:1 1 auto;min-height:96px;aspect-ratio:auto}
+      ha-card.fixed-height .empty{display:flex;flex:1 1 auto;min-height:0;align-items:center;justify-content:center;overflow:auto}
       .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out}
       .lb img{max-width:96vw;max-height:96vh;border-radius:6px}
       .lb video{max-width:96vw;max-height:96vh;border-radius:6px;cursor:default}
@@ -569,6 +690,8 @@ class FrigateDeliveryCard extends HTMLElement {
     </style><ha-card><div id="body"></div></ha-card>`;
     r.host.addEventListener("mouseenter", () => (this._hover = true));
     r.host.addEventListener("mouseleave", () => (this._hover = false));
+    r.querySelector("ha-card").classList.toggle("fixed-height", this._hasFixedGridRows());
+    this._startResizeObserver();
   }
 
   _render() {
@@ -576,6 +699,7 @@ class FrigateDeliveryCard extends HTMLElement {
     if (!b) return;
     if (this._err) {
       b.innerHTML = `<div class="empty">${this._err}</div>`;
+      this._scheduleResizeCheck();
       return;
     }
     const view = this._cfg.view;
@@ -712,6 +836,7 @@ class FrigateDeliveryCard extends HTMLElement {
           this._render();
         })
     );
+    this._scheduleResizeCheck();
   }
 
   _lightbox(id) {

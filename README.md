@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/thomasgregg/frigate-delivery-card/blob/main/LICENSE)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/thomasgregg/frigate-delivery-card)
 
-A lightweight Home Assistant Lovelace card that shows **Frigate event snapshots filtered by `sub_label`** — the one filter the popular camera cards don't support yet.
+See **which delivery companies visited your home, when they arrived, and what happened** — all from your Home Assistant dashboard. Frigate Delivery Card turns your camera events into a simple, browsable history with snapshots and video clips, so it is easy to check whether a parcel arrived, identify the courier, or review missed activity.
 
-Built for the classic use case: a **Frigate+ model recognizes delivery company logos** (DHL, DPD, GLS, UPS, Amazon, FedEx, …) and assigns them as sub_labels to tracked vehicles. This card turns those events into a clean, browsable snapshot reel on your dashboard — *"which delivery vans came by today?"* — with zero extra plumbing: no snapshot automations, no folders, no cleanup jobs.
+It works especially well with Frigate+ logo recognition for couriers such as DHL, DPD, GLS, UPS, Amazon, and FedEx. Everything is gathered automatically from Frigate, with no extra snapshot automations, folders, or cleanup jobs to manage.
 
 ![Screenshot of the Frigate Delivery Card](https://raw.githubusercontent.com/thomasgregg/frigate-delivery-card/main/docs/screenshot.png)
 
@@ -79,6 +79,17 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 | `slideshow` | number | `6` | Auto-advance interval in seconds, `0` to disable |
 | `refresh` | number | `120` | Refetch interval in seconds |
 | `instance_id` | string | `frigate` | Frigate instance / client id (only needed for multi-instance setups) |
+
+### Sections dashboard sizing
+
+The card uses automatic height by default, preserving the natural 16:9 snapshot or video area and allowing company filters to wrap. In a Sections dashboard you can resize it down to these supported minimums:
+
+| View | Default size | Minimum size |
+|---|---:|---:|
+| Reel | 12 columns × automatic height | 6 columns × 4 rows |
+| Timeline | 12 columns × automatic height | 6 columns × 3 rows |
+
+When you choose a fixed row height, the card automatically switches to a compact layout: the media area uses the remaining height, filters and thumbnails scroll horizontally, and controls scale with the card. The minimums prevent combinations where content would be clipped or too small to read or tap. Wider cards still need the listed minimum row count—for example, Reel at 12 × 4—because width and height are resized independently.
 
 ### Examples
 
