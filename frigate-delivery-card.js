@@ -11,12 +11,12 @@ const de = {
   customCardDescription: "Frigate-Ereignisschnappschüsse, nach sub_label (Zustelldienste, Gesichter, Kennzeichen) gefiltert, mit Diashow, Zeitleiste, Filterchips und Clip-Wiedergabe.",
   eventSnapshot: "Ereignis-Schnappschuss: {company}",
   eventThumbnail: "Ereignis-Vorschaubild: {company}",
-  extraCategories: "Zusätzliche Kategorien (SONSTIGE & PERSON)",
+  extraCategories: "Zusätzliche Ereigniskategorien (SONSTIGE & PERSON)",
   fullscreen: "Vollbild",
   hoursLabel: "Rückblick (Stunden, nur gleitendes Zeitfenster)",
   instanceIdLabel: "Frigate-Instanz-ID",
-  labelsHelp: "Optional, z. B. person",
-  labelsLabel: "Labels",
+  labelsHelp: "Schränkt die Hauptabfrage ein; anders als PERSON wird keine separate Kategorie hinzugefügt",
+  labelsLabel: "Objekt-Labels (Hauptabfrage)",
   legacyCardDescription: "Früherer Elementname der Frigate Delivery Card – dieselbe Karte, für alte Konfigurationen beibehalten.",
   legacyCardName: "Frigate Delivery Card (früherer Name)",
   limitLabel: "Maximale Ereignisanzahl",
@@ -66,12 +66,12 @@ const en = {
   customCardDescription: "Frigate event snapshots filtered by sub_label (delivery companies, faces, plates) with slideshow, timeline, filter chips and clip playback.",
   eventSnapshot: "{company} event snapshot",
   eventThumbnail: "{company} event thumbnail",
-  extraCategories: "Extra categories (OTHER & PERSON)",
+  extraCategories: "Additional event categories (OTHER & PERSON)",
   fullscreen: "Fullscreen",
   hoursLabel: "Look back (hours, rolling window only)",
   instanceIdLabel: "Frigate instance id",
-  labelsHelp: "Optional, e.g. person",
-  labelsLabel: "Labels",
+  labelsHelp: "Restricts the main query; unlike PERSON, it does not add a separate category",
+  labelsLabel: "Object labels (main query)",
   legacyCardDescription: "Legacy element name of the Frigate Delivery Card - same card, kept for old configurations.",
   legacyCardName: "Frigate Delivery Card (legacy name)",
   limitLabel: "Max events",
@@ -134,7 +134,7 @@ function localize(key, language, replacements = {}) {
     template
   );
 }
-const FDC_VERSION = "1.27.0";
+const FDC_VERSION = "1.27.1";
 const FDC_COLORS = {
   dhl: { bg: "#FFCC00", fg: "#D40511" },
   dpd: { bg: "#DC0032", fg: "#FFFFFF" },

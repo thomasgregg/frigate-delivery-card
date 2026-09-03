@@ -1,6 +1,6 @@
 {
   "name": "frigate-delivery-card",
-  "version": "1.27.0",
+  "version": "1.27.1",
   "description": "A Home Assistant card for browsing Frigate delivery events.",
   "type": "module",
   "scripts": {

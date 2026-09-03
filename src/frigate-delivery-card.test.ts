@@ -113,7 +113,9 @@ describe("Frigate Delivery Card localization", () => {
 
     editor.hass = makeHass("de-DE");
     expect(form.computeLabel({ name: "camera" })).toContain("Frigate-Kameraname");
+    expect(form.computeLabel({ name: "labels" })).toBe("Objekt-Labels (Hauptabfrage)");
     expect(JSON.stringify(form.schema)).toContain('"value":"reel"');
     expect(JSON.stringify(form.schema)).toContain("Diashow + Vorschaubildleiste");
+    expect(JSON.stringify(form.schema)).toContain("Zusätzliche Ereigniskategorien");
   });
 });

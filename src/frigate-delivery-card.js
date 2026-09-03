@@ -21,7 +21,7 @@ import {
   resolveLocale,
 } from "./localize";
 
-const FDC_VERSION = "1.27.0";
+const FDC_VERSION = "1.27.1";
 
 /** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {

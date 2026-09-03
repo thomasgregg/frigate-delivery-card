@@ -77,7 +77,7 @@ YAML continues to work in every language.
 | `camera` | string | **required*** | Frigate camera name (as in your Frigate config) |
 | `cameras` | list | – | Multiple Frigate camera names (*alternative to `camera`) |
 | `sub_labels` | list | all supported couriers | Sub_labels to show. Defaults to every courier the Frigate+ model supports. Set `[]` to disable sub_label filtering |
-| `labels` | list | – | Optional label filter, e.g. `[person]` |
+| `labels` | list | – | Optional Frigate object-label filter that restricts the main event query, e.g. `[person]`; unlike `persons`, it does not add a separate category query |
 | `zones` | list | – | Optional zone filter, e.g. `[mailbox]` |
 | `view` | string | `reel` | `reel` or `timeline` |
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
