@@ -22,12 +22,13 @@ It works especially well with Frigate+ logo recognition for couriers such as DHL
 - **PERSON category** (optional, `persons: true`) — also show every person event as its own teal **PERSON** chip: couriers walking to the door, visitors, passers-by. Note that person and vehicle events are separate objects in Frigate, so a delivery shows up as both a courier event and a person event
 - **Thumbnail fallback** — events without a saved snapshot (e.g. brief drive-by detections) are still shown using Frigate's always-available event thumbnail
 - **Visual editor** — full UI configuration in the dashboard card editor, no YAML required; options are grouped into collapsible sections (View & playback, Time range, OTHER stops, Advanced)
+- **English and German** — the card and visual editor automatically follow each user's Home Assistant profile language; regional variants and formatting preferences are respected, with English fallback
 - **Auto-advancing slideshow** with configurable interval, pauses on hover
 - **Filter chips** per company/sub_label with live event counts; tapping the active chip clears the filter, the OTHER chip always comes last, and the ALL chip can be hidden with `show_all: false`
 - **Time-range based** — rolling window (e.g. last 24 h) or **today only** (since local midnight); retention is handled entirely by your Frigate settings
 - **Auto-refresh** (default every 2 minutes)
 - Also filters by `labels` and `zones`, so it doubles as e.g. a *"person at the mailbox"* card
-- Theme-aware styling, no external dependencies, ~9 KB
+- Theme-aware styling, no runtime dependencies, ~13 KB compressed
 
 ## How it works
 
@@ -39,6 +40,18 @@ The card talks to the [Frigate Home Assistant integration](https://github.com/bl
 - The [Frigate Home Assistant integration](https://github.com/blakeblackshear/frigate-hass-integration) (v5+)
 - For delivery company recognition: a [Frigate+](https://frigate.video/plus/) model that assigns company sub_labels, with the labels listed under `objects: track:` in your Frigate config
 - For clip playback: `record:` enabled in Frigate (event/alert retention is enough)
+
+## Languages
+
+Frigate Delivery Card currently supports **English and German**. The card and
+its graphical editor automatically follow the language selected in each Home
+Assistant user profile and update when that language changes. German regional
+variants such as `de-DE` and `de-AT` use the German translation while retaining
+their regional date and time formatting. Unsupported languages fall back safely
+to English.
+
+Configuration keys and values remain unchanged and untranslated, so existing
+YAML continues to work in every language.
 
 ## Installation
 

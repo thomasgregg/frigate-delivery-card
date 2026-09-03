@@ -1,140 +1,29 @@
-const de = {
-  advanced: "Erweitert",
-  all: "Alle",
-  backToImage: "Zurück zum Bild",
-  cameraHelp: "Wie in der Frigate-Konfiguration benannt",
-  cameraLabel: "Frigate-Kameraname (wie in der Frigate-Konfiguration)",
-  clipsLabel: "Schaltfläche zur Clip-Wiedergabe (erfordert aktivierte Frigate-Aufzeichnung)",
-  clipRequiresRecord: "Clips erfordern eine aktivierte Aufzeichnung in Frigate.",
-  clipUnavailable: "Für dieses Ereignis ist kein Clip verfügbar.",
-  close: "Schließen",
-  customCardDescription: "Frigate-Ereignisschnappschüsse, nach sub_label (Zustelldienste, Gesichter, Kennzeichen) gefiltert, mit Diashow, Zeitleiste, Filterchips und Clip-Wiedergabe.",
-  eventSnapshot: "Ereignis-Schnappschuss: {company}",
-  eventThumbnail: "Ereignis-Vorschaubild: {company}",
-  extraCategories: "Zusätzliche Kategorien (SONSTIGE & PERSON)",
-  fullscreen: "Vollbild",
-  hoursLabel: "Rückblick (Stunden, nur gleitendes Zeitfenster)",
-  instanceIdLabel: "Frigate-Instanz-ID",
-  labelsHelp: "Optional, z. B. person",
-  labelsLabel: "Labels",
-  legacyCardDescription: "Früherer Elementname der Frigate Delivery Card – dieselbe Karte, für alte Konfigurationen beibehalten.",
-  legacyCardName: "Frigate Delivery Card (früherer Name)",
-  limitLabel: "Maximale Ereignisanzahl",
-  missingCameraError: "Frigate Delivery Card: Bitte 'camera' (oder 'cameras') festlegen.",
-  nextEvent: "Nächstes Ereignis",
-  noMatchingLastHour: "Keine passenden Ereignisse in der letzten Stunde.",
-  noMatchingLastHours: "Keine passenden Ereignisse in den letzten {hours} Stunden.",
-  noMatchingToday: "Heute keine passenden Ereignisse.",
-  otherCategory: "Sonstige",
-  periodHours: "Gleitendes Zeitfenster (letzte N Stunden)",
-  periodLabel: "Zeitraum",
-  periodToday: "Heute (seit Mitternacht, Ortszeit)",
-  personCategory: "Person",
-  personsLabel: "PERSON: alle Personenereignisse anzeigen",
-  playClip: "Clip abspielen",
-  previousEvent: "Vorheriges Ereignis",
-  queryFailed: "Frigate-Abfrage fehlgeschlagen",
-  refreshLabel: "Aktualisieren alle (s)",
-  reel: "Reel (Diashow + Vorschaubildleiste)",
-  showAllLabel: "Filterchip ALLE anzeigen",
-  slideshowLabel: "Diashow-Intervall (s, 0 = aus)",
-  sortLabel: "Sortierreihenfolge",
-  sortNewest: "Neueste zuerst",
-  sortOldest: "Älteste zuerst",
-  subLabelsHelp: "Zustelldienste auswählen oder eigene Werte eingeben – leer lassen, um die sub_label-Filterung zu deaktivieren",
-  subLabelsLabel: "Zustelldienste / Sub-Labels",
-  timeline: "Zeitleiste (farbige Zeitmarken + Diashow)",
-  timeRange: "Zeitraum",
-  unrecognizedLabel: "SONSTIGE: Fahrzeugstopps ohne erkanntes Zustellerlogo anzeigen",
-  unrecognizedMinDurationLabel: "SONSTIGE: Mindestdauer des Stopps (s)",
-  viewLabel: "Ansicht",
-  viewPlayback: "Ansicht & Wiedergabe",
-  yesterday: "gestern",
-  zonesHelp: "Optional, Frigate-Zonennamen eingeben, z. B. mailbox",
-  zonesLabel: "Zonen"
-};
-const en = {
-  advanced: "Advanced",
-  all: "All",
-  backToImage: "Back to image",
-  cameraHelp: "As named in your Frigate configuration",
-  cameraLabel: "Frigate camera name (as in Frigate configuration)",
-  clipsLabel: "Clip playback button (requires 'record' to be enabled in Frigate)",
-  clipRequiresRecord: "Clips require 'record' to be enabled in Frigate.",
-  clipUnavailable: "No clip available for this event.",
-  close: "Close",
-  customCardDescription: "Frigate event snapshots filtered by sub_label (delivery companies, faces, plates) with slideshow, timeline, filter chips and clip playback.",
-  eventSnapshot: "{company} event snapshot",
-  eventThumbnail: "{company} event thumbnail",
-  extraCategories: "Extra categories (OTHER & PERSON)",
-  fullscreen: "Fullscreen",
-  hoursLabel: "Look back (hours, rolling window only)",
-  instanceIdLabel: "Frigate instance id",
-  labelsHelp: "Optional, e.g. person",
-  labelsLabel: "Labels",
-  legacyCardDescription: "Legacy element name of the Frigate Delivery Card - same card, kept for old configurations.",
-  legacyCardName: "Frigate Delivery Card (legacy name)",
-  limitLabel: "Max events",
-  missingCameraError: "Frigate Delivery Card: please set 'camera' (or 'cameras').",
-  nextEvent: "Next event",
-  noMatchingLastHour: "No matching events in the last hour.",
-  noMatchingLastHours: "No matching events in the last {hours} hours.",
-  noMatchingToday: "No matching events today.",
-  otherCategory: "Other",
-  periodHours: "Rolling window (look back N hours)",
-  periodLabel: "Time range",
-  periodToday: "Today (since local midnight)",
-  personCategory: "Person",
-  personsLabel: "PERSON: show all person events",
-  playClip: "Play clip",
-  previousEvent: "Previous event",
-  queryFailed: "Frigate query failed",
-  refreshLabel: "Refresh every (s)",
-  reel: "Reel (slideshow + thumbnail strip)",
-  showAllLabel: "Show the ALL filter chip",
-  slideshowLabel: "Slideshow interval (s, 0 = off)",
-  sortLabel: "Sort order",
-  sortNewest: "Newest first",
-  sortOldest: "Oldest first",
-  subLabelsHelp: "Pick couriers or type custom values - leave empty to disable sub_label filtering",
-  subLabelsLabel: "Couriers / sub labels",
-  timeline: "Timeline (brand-colored time pills + slideshow)",
-  timeRange: "Time range",
-  unrecognizedLabel: "OTHER: show vehicle stops without a courier logo",
-  unrecognizedMinDurationLabel: "OTHER: minimum stop duration (s)",
-  viewLabel: "View",
-  viewPlayback: "View & playback",
-  yesterday: "yesterday",
-  zonesHelp: "Optional, type your Frigate zone names, e.g. mailbox",
-  zonesLabel: "Zones"
-};
-const translations = { de, en };
-function resolveLanguage(language) {
-  const detected = language?.trim() || (typeof document !== "undefined" ? document.documentElement.lang : "") || (typeof navigator !== "undefined" ? navigator.language : "") || "en";
-  try {
-    return Intl.getCanonicalLocales(detected)[0] ?? "en";
-  } catch {
-    return "en";
-  }
-}
-function resolveLocale(language) {
-  const detected = resolveLanguage(language).toLowerCase();
-  if (detected in translations) return detected;
-  const base = detected.split("-")[0] ?? "en";
-  return base in translations ? base : "en";
-}
-function getTranslations(language) {
-  return translations[resolveLocale(language)];
-}
-function localize(key, language, replacements = {}) {
-  const catalog = translations[resolveLocale(language)];
-  const template = catalog[key] ?? en[key] ?? key;
-  return Object.entries(replacements).reduce(
-    (value, [name, replacement]) => value.replaceAll(`{${name}}`, String(replacement)),
-    template
-  );
-}
+/**
+ * Frigate Delivery Card
+ * https://github.com/thomasgregg/frigate-delivery-card
+ *
+ * A lightweight Lovelace card that shows Frigate event snapshots filtered by
+ * sub_label (e.g. delivery companies recognized by a Frigate+ model), with an
+ * auto-advancing slideshow, thumbnail strip, per-company filter chips, an
+ * event list view and a fullscreen lightbox.
+ *
+ * Data source: the official Frigate Home Assistant integration websocket API
+ * (frigate/events/get) — no files on disk, no shell commands, no polling of
+ * the Frigate server from the browser.
+ *
+ * License: MIT
+ */
+
+import {
+  getTranslations,
+  localize,
+  resolveLanguage,
+  resolveLocale,
+} from "./localize";
+
 const FDC_VERSION = "1.27.0";
+
+/** Brand colors for well-known delivery sub_labels (bg / fg). */
 const FDC_COLORS = {
   dhl: { bg: "#FFCC00", fg: "#D40511" },
   dpd: { bg: "#DC0032", fg: "#FFFFFF" },
@@ -152,12 +41,25 @@ const FDC_COLORS = {
   purolator: { bg: "#003087", fg: "#FFFFFF" },
   nzpost: { bg: "#E4002B", fg: "#FFFFFF" },
   person: { bg: "#00897B", fg: "#FFFFFF" },
-  other: { bg: "#607D8B", fg: "#FFFFFF" }
+  other: { bg: "#607D8B", fg: "#FFFFFF" },
 };
-const fdcLanguage = (hass, internationalization) => resolveLanguage(
-  internationalization?.locale?.language ?? internationalization?.language ?? hass?.locale?.language ?? hass?.language
-);
-const escapeHtml = (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+
+const fdcLanguage = (hass, internationalization) =>
+  resolveLanguage(
+    internationalization?.locale?.language ??
+      internationalization?.language ??
+      hass?.locale?.language ??
+      hass?.language
+  );
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
 const FDC_SCHEMA = (copy) => [
   { name: "camera", required: true, selector: { text: {} } },
   {
@@ -169,23 +71,11 @@ const FDC_SCHEMA = (copy) => [
         options: [
           // every courier logo the current Frigate+ model supports (hermes is
           // still only a candidate label - type it manually if you need it)
-          "dhl",
-          "dpd",
-          "gls",
-          "ups",
-          "amazon",
-          "fedex",
-          "usps",
-          "postnl",
-          "postnord",
-          "royal_mail",
-          "an_post",
-          "canada_post",
-          "purolator",
-          "nzpost"
-        ]
-      }
-    }
+          "dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl",
+          "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost",
+        ],
+      },
+    },
   },
   {
     name: "",
@@ -200,10 +90,10 @@ const FDC_SCHEMA = (copy) => [
             mode: "dropdown",
             options: [
               { value: "reel", label: copy.reel },
-              { value: "timeline", label: copy.timeline }
-            ]
-          }
-        }
+              { value: "timeline", label: copy.timeline },
+            ],
+          },
+        },
       },
       {
         name: "sort",
@@ -212,10 +102,10 @@ const FDC_SCHEMA = (copy) => [
             mode: "dropdown",
             options: [
               { value: "newest", label: copy.sortNewest },
-              { value: "oldest", label: copy.sortOldest }
-            ]
-          }
-        }
+              { value: "oldest", label: copy.sortOldest },
+            ],
+          },
+        },
       },
       { name: "show_all", selector: { boolean: {} } },
       { name: "clips", selector: { boolean: {} } },
@@ -224,10 +114,10 @@ const FDC_SCHEMA = (copy) => [
         name: "",
         schema: [
           { name: "slideshow", selector: { number: { min: 0, max: 60, mode: "box" } } },
-          { name: "refresh", selector: { number: { min: 10, max: 3600, mode: "box" } } }
-        ]
-      }
-    ]
+          { name: "refresh", selector: { number: { min: 10, max: 3600, mode: "box" } } },
+        ],
+      },
+    ],
   },
   {
     name: "",
@@ -242,20 +132,20 @@ const FDC_SCHEMA = (copy) => [
             mode: "dropdown",
             options: [
               { value: "hours", label: copy.periodHours },
-              { value: "today", label: copy.periodToday }
-            ]
-          }
-        }
+              { value: "today", label: copy.periodToday },
+            ],
+          },
+        },
       },
       {
         type: "grid",
         name: "",
         schema: [
           { name: "hours", selector: { number: { min: 1, max: 720, mode: "box" } } },
-          { name: "limit", selector: { number: { min: 1, max: 500, mode: "box" } } }
-        ]
-      }
-    ]
+          { name: "limit", selector: { number: { min: 1, max: 500, mode: "box" } } },
+        ],
+      },
+    ],
   },
   {
     name: "",
@@ -265,8 +155,8 @@ const FDC_SCHEMA = (copy) => [
     schema: [
       { name: "unrecognized", selector: { boolean: {} } },
       { name: "unrecognized_min_duration", selector: { number: { min: 5, max: 600, mode: "box" } } },
-      { name: "persons", selector: { boolean: {} } }
-    ]
+      { name: "persons", selector: { boolean: {} } },
+    ],
   },
   {
     name: "",
@@ -277,23 +167,25 @@ const FDC_SCHEMA = (copy) => [
       {
         name: "labels",
         selector: {
-          select: { multiple: true, custom_value: true, options: ["person", "car", "package", "bicycle", "motorcycle"] }
-        }
+          select: { multiple: true, custom_value: true, options: ["person", "car", "package", "bicycle", "motorcycle"] },
+        },
       },
       {
         name: "zones",
-        selector: { select: { multiple: true, custom_value: true, options: [] } }
+        selector: { select: { multiple: true, custom_value: true, options: [] } },
       },
-      { name: "instance_id", selector: { text: {} } }
-    ]
-  }
+      { name: "instance_id", selector: { text: {} } },
+    ],
+  },
 ];
+
 const FDC_HELPERS = (copy) => ({
   sub_labels: copy.subLabelsHelp,
   labels: copy.labelsHelp,
   zones: copy.zonesHelp,
-  camera: copy.cameraHelp
+  camera: copy.cameraHelp,
 });
+
 const FDC_LABELS = (copy) => ({
   camera: copy.cameraLabel,
   sub_labels: copy.subLabelsLabel,
@@ -311,8 +203,9 @@ const FDC_LABELS = (copy) => ({
   persons: copy.personsLabel,
   labels: copy.labelsLabel,
   zones: copy.zonesLabel,
-  instance_id: copy.instanceIdLabel
+  instance_id: copy.instanceIdLabel,
 });
+
 class FrigateDeliveryCardEditor extends HTMLElement {
   connectedCallback() {
     if (!this._languageObserver && typeof MutationObserver !== "undefined") {
@@ -321,14 +214,14 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       });
       this._languageObserver.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ["lang"]
+        attributeFilter: ["lang"],
       });
     }
     if (!this._unsubscribeInternationalization) {
       const event = new CustomEvent("context-request", {
         bubbles: true,
         composed: true,
-        cancelable: true
+        cancelable: true,
       });
       event.context = "hassInternationalization";
       event.subscribe = true;
@@ -365,11 +258,16 @@ class FrigateDeliveryCardEditor extends HTMLElement {
     const labels = FDC_LABELS(copy);
     const helpers = FDC_HELPERS(copy);
     if (!this._form) {
+      // give focus/press rings of inner controls room to render - without this
+      // the rounded outline of e.g. the courier picker gets clipped at the edges
       this.style.display = "block";
       this.style.padding = "0 4px 4px";
       this.style.overflow = "visible";
       this._form = document.createElement("ha-form");
       this._form.addEventListener("value-changed", (ev) => {
+        // NOTE: do not strip empty entries here - the "+ Add" button appends an
+        // empty row, and sanitizing it away made the first click appear dead.
+        // Empty/whitespace entries are cleaned in the card's setConfig instead.
         const cfg = { ...this._config, ...ev.detail.value };
         this._config = cfg;
         this.dispatchEvent(
@@ -396,12 +294,13 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       refresh: 120,
       instance_id: "frigate",
       sub_labels: ["dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl", "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost"],
-      ...this._config
+      ...this._config,
     };
     this._form.schema = FDC_SCHEMA(copy);
   }
 }
 customElements.define("frigate-delivery-card-editor", FrigateDeliveryCardEditor);
+
 class FrigateDeliveryCard extends HTMLElement {
   static getConfigElement() {
     return document.createElement("frigate-delivery-card-editor");
@@ -410,9 +309,10 @@ class FrigateDeliveryCard extends HTMLElement {
     return {
       camera: "entrance",
       sub_labels: ["dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl", "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost"],
-      hours: 24
+      hours: 24,
     };
   }
+
   setConfig(cfg) {
     if (!cfg.camera && !cfg.cameras) {
       throw new Error(localize("missingCameraError", this._language()));
@@ -423,44 +323,32 @@ class FrigateDeliveryCard extends HTMLElement {
         instance_id: "frigate",
         camera: null,
         cameras: null,
-        labels: null,
-        // optional: e.g. ["person"]
+        labels: null,       // optional: e.g. ["person"]
         sub_labels: ["dhl", "dpd", "gls", "ups", "amazon", "fedex", "usps", "postnl", "postnord", "royal_mail", "an_post", "canada_post", "purolator", "nzpost"],
-        zones: null,
-        // optional: e.g. ["mailbox"]
-        view: "reel",
-        // "reel" | "timeline"
-        sort: "newest",
-        // "newest" | "oldest"
-        clips: true,
-        // show the clip playback button (requires record enabled in Frigate)
-        show_all: true,
-        // show the ALL filter chip (total count + one-tap filter reset)
-        unrecognized: false,
-        // also show long vehicle stops without a courier logo
-        unrecognized_min_duration: 30,
-        // seconds a vehicle must stay to count as a stop
-        persons: false,
-        // also show every person event as a PERSON category
-        period: "hours",
-        // "hours" = rolling window | "today" = since local midnight
-        hours: 24,
-        // only used when period === "hours"
+        zones: null,        // optional: e.g. ["mailbox"]
+        view: "reel",       // "reel" | "timeline"
+        sort: "newest",     // "newest" | "oldest"
+        clips: true,        // show the clip playback button (requires record enabled in Frigate)
+        show_all: true,     // show the ALL filter chip (total count + one-tap filter reset)
+        unrecognized: false, // also show long vehicle stops without a courier logo
+        unrecognized_min_duration: 30, // seconds a vehicle must stay to count as a stop
+        persons: false,     // also show every person event as a PERSON category
+        period: "hours",    // "hours" = rolling window | "today" = since local midnight
+        hours: 24,          // only used when period === "hours"
         limit: 100,
-        slideshow: 6,
-        // seconds; 0 disables auto-advance
-        refresh: 120
-        // seconds between refetches
+        slideshow: 6,       // seconds; 0 disables auto-advance
+        refresh: 120,       // seconds between refetches
       },
       cfg
     );
+    // clean whitespace/empty entries left over from editing in the visual editor
     for (const k of ["sub_labels", "labels", "zones"]) {
       if (Array.isArray(this._cfg[k])) {
         this._cfg[k] = this._cfg[k].map((v) => String(v).trim()).filter((v) => v);
         if (!this._cfg[k].length && k !== "sub_labels") this._cfg[k] = null;
       }
     }
-    if (!["reel", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel";
+    if (!["reel", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel"; // list/combined removed in 1.5.0
     if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
     this._cfg.clips = this._cfg.clips !== false;
     const withoutGridOptions = (config) => {
@@ -468,35 +356,45 @@ class FrigateDeliveryCard extends HTMLElement {
       delete comparable.grid_options;
       return JSON.stringify(comparable);
     };
-    const sizingOnly = previousCfg && withoutGridOptions(previousCfg) === withoutGridOptions(this._cfg);
+    const sizingOnly =
+      previousCfg && withoutGridOptions(previousCfg) === withoutGridOptions(this._cfg);
     if (!sizingOnly) {
       this._events = [];
       this._loaded = false;
       this._idx = 0;
       this._filter = null;
       this._hover = false;
-      this._playing = false;
-      this._clipFor = null;
+      this._playing = false; // false | true (clip playing inline) | "error" (no clip)
+      this._clipFor = null;  // event id the clip belongs to
     }
+
+    // A numeric Sections row count is an explicit height constraint. Remove a
+    // stale editor-detected class when switching back to automatic height; the
+    // observer will add it again if the editor is still clipping the preview.
     if (this.shadowRoot) {
       const card = this.shadowRoot.querySelector("ha-card");
       if (card) card.classList.toggle("fixed-height", this._hasFixedGridRows());
       this._scheduleResizeCheck();
     }
   }
+
   getGridOptions() {
     const timeline = this._cfg?.view === "timeline";
     return {
       columns: 12,
       min_columns: 6,
       rows: "auto",
-      min_rows: timeline ? 3 : 4
+      min_rows: timeline ? 3 : 4,
     };
   }
+
   getCardSize() {
-    const height = this.shadowRoot?.querySelector("ha-card")?.getBoundingClientRect().height;
+    const height = this.shadowRoot
+      ?.querySelector("ha-card")
+      ?.getBoundingClientRect().height;
     return height > 0 ? Math.max(1, Math.ceil(height / 50)) : 6;
   }
+
   connectedCallback() {
     if (!this._languageObserver && typeof MutationObserver !== "undefined") {
       this._languageObserver = new MutationObserver(() => {
@@ -504,14 +402,14 @@ class FrigateDeliveryCard extends HTMLElement {
       });
       this._languageObserver.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ["lang"]
+        attributeFilter: ["lang"],
       });
     }
     if (!this._unsubscribeInternationalization) {
       const event = new CustomEvent("context-request", {
         bubbles: true,
         composed: true,
-        cancelable: true
+        cancelable: true,
       });
       event.context = "hassInternationalization";
       event.subscribe = true;
@@ -525,6 +423,7 @@ class FrigateDeliveryCard extends HTMLElement {
     }
     if (this.shadowRoot) this._startResizeObserver();
   }
+
   set hass(h) {
     const hadHass = Boolean(this._hass);
     const previousLanguage = this._language();
@@ -534,11 +433,12 @@ class FrigateDeliveryCard extends HTMLElement {
     if (!this._booted) {
       this._booted = true;
       this._fetch();
-      this._poll = setInterval(() => this._fetch(), this._cfg.refresh * 1e3);
+      this._poll = setInterval(() => this._fetch(), this._cfg.refresh * 1000);
       this._scheduleMidnight();
       this._startShow();
     }
   }
+
   disconnectedCallback() {
     if (this._poll) clearInterval(this._poll);
     if (this._mid) clearTimeout(this._mid);
@@ -556,21 +456,26 @@ class FrigateDeliveryCard extends HTMLElement {
     if (this._languageObserver) this._languageObserver.disconnect();
     this._languageObserver = null;
   }
+
   _language() {
     return fdcLanguage(this._hass, this._internationalization);
   }
+
   _t(key, replacements) {
     return localize(key, this._language(), replacements);
   }
+
   _companyLabel(company) {
     if (company === "person") return this._t("personCategory");
     if (company === "other") return this._t("otherCategory");
     return company.replace(/_/g, " ");
   }
+
   _hasFixedGridRows() {
     const rows = this._cfg?.grid_options?.rows;
     return typeof rows === "number" && Number.isFinite(rows);
   }
+
   _startResizeObserver() {
     if (this._resizeObserver || typeof ResizeObserver === "undefined") return;
     const card = this.shadowRoot?.querySelector("ha-card");
@@ -582,6 +487,7 @@ class FrigateDeliveryCard extends HTMLElement {
     this._resizeObserver.observe(body);
     this._scheduleResizeCheck();
   }
+
   _scheduleResizeCheck() {
     if (this._resizeFrame || !this.isConnected) return;
     this._resizeFrame = requestAnimationFrame(() => {
@@ -589,6 +495,7 @@ class FrigateDeliveryCard extends HTMLElement {
       this._updateHeightMode();
     });
   }
+
   /**
    * Detect a height-constrained editor preview without involving rendering or
    * card state. The observer is deliberately limited to measuring geometry and
@@ -598,37 +505,55 @@ class FrigateDeliveryCard extends HTMLElement {
     const card = this.shadowRoot?.querySelector("ha-card");
     const body = this.shadowRoot?.getElementById("body");
     if (!card || !body) return;
+
     if (this._hasFixedGridRows()) {
       card.classList.add("fixed-height");
       return;
     }
+
+    // Probe the natural layout on every observed size change. The class is
+    // restored in this same animation frame when the editor still constrains
+    // the card, avoiding a sticky compact mode when automatic height returns.
     card.classList.remove("fixed-height");
+
     const tolerance = 1;
     const hostRect = this.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
     const measured = [body, ...body.children];
-    const cardOutsideHost = cardRect.top < hostRect.top - tolerance || cardRect.left < hostRect.left - tolerance || cardRect.right > hostRect.right + tolerance || cardRect.bottom > hostRect.bottom + tolerance;
+    const cardOutsideHost =
+      cardRect.top < hostRect.top - tolerance ||
+      cardRect.left < hostRect.left - tolerance ||
+      cardRect.right > hostRect.right + tolerance ||
+      cardRect.bottom > hostRect.bottom + tolerance;
     const outsideCard = measured.some((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.top < cardRect.top - tolerance || rect.left < cardRect.left - tolerance || rect.right > cardRect.right + tolerance || rect.bottom > cardRect.bottom + tolerance;
+      return (
+        rect.top < cardRect.top - tolerance ||
+        rect.left < cardRect.left - tolerance ||
+        rect.right > cardRect.right + tolerance ||
+        rect.bottom > cardRect.bottom + tolerance
+      );
     });
     const verticallyClipped = [this, card, body, ...body.children].some(
       (element) => element.scrollHeight > element.clientHeight + tolerance
     );
+
     card.classList.toggle("fixed-height", cardOutsideHost || outsideCard || verticallyClipped);
   }
+
   /** In "today" mode, wipe the reel promptly when the day rolls over. */
   _scheduleMidnight() {
     if (this._mid) clearTimeout(this._mid);
     this._mid = null;
     if (this._cfg.period !== "today") return;
-    const next = /* @__PURE__ */ new Date();
-    next.setHours(24, 0, 5, 0);
+    const next = new Date();
+    next.setHours(24, 0, 5, 0); // 5 s past local midnight
     this._mid = setTimeout(() => {
       this._fetch();
       this._scheduleMidnight();
     }, next.getTime() - Date.now());
   }
+
   _startShow() {
     this._stopShow();
     const s = Number(this._cfg.slideshow);
@@ -638,29 +563,35 @@ class FrigateDeliveryCard extends HTMLElement {
           this._idx = (this._idx + 1) % this._list().length;
           this._render();
         }
-      }, s * 1e3);
+      }, s * 1000);
   }
+
   _stopShow() {
     if (this._show) {
       clearInterval(this._show);
       this._show = null;
     }
   }
+
   /** Unix timestamp (s) that events must start after. */
   _after() {
     if (this._cfg.period === "today") {
-      const d = /* @__PURE__ */ new Date();
-      d.setHours(0, 0, 0, 0);
-      return Math.floor(d.getTime() / 1e3);
+      const d = new Date();
+      d.setHours(0, 0, 0, 0); // local midnight - DST/timezone safe
+      return Math.floor(d.getTime() / 1000);
     }
-    return Math.floor(Date.now() / 1e3) - this._cfg.hours * 3600;
+    return Math.floor(Date.now() / 1000) - this._cfg.hours * 3600;
   }
+
   /** Localized wording for the current time range, used in the empty state. */
   _emptyMessage() {
     if (this._cfg.period === "today") return this._t("noMatchingToday");
     const hours = Number(this._cfg.hours);
-    return hours === 1 ? this._t("noMatchingLastHour") : this._t("noMatchingLastHours", { hours });
+    return hours === 1
+      ? this._t("noMatchingLastHour")
+      : this._t("noMatchingLastHours", { hours });
   }
+
   async _fetch() {
     if (!this._hass) return;
     const c = this._cfg;
@@ -669,7 +600,7 @@ class FrigateDeliveryCard extends HTMLElement {
       instance_id: c.instance_id,
       cameras: c.cameras || [c.camera],
       after: this._after(),
-      limit: c.limit
+      limit: c.limit,
     };
     if (Array.isArray(c.labels) && c.labels.length) msg.labels = c.labels;
     if (Array.isArray(c.sub_labels) && c.sub_labels.length) msg.sub_labels = c.sub_labels;
@@ -678,6 +609,10 @@ class FrigateDeliveryCard extends HTMLElement {
       let res = await this._hass.callWS(msg);
       if (typeof res === "string") res = JSON.parse(res);
       let raw = Array.isArray(res) ? res : [];
+      // Optionally include UNRECOGNIZED stops: vehicles that parked long enough
+      // to plausibly be a delivery (unbranded subcontractor vans etc.) but got
+      // no courier sub_label. Second query without the sub_label filter; only
+      // events with no sub_label at all and a minimum duration are added.
       if (c.unrecognized && Array.isArray(c.sub_labels) && c.sub_labels.length) {
         const msg2 = { ...msg, labels: ["car"] };
         delete msg2.sub_labels;
@@ -686,12 +621,15 @@ class FrigateDeliveryCard extends HTMLElement {
         const seen = new Set(raw.map((e) => e.id));
         const minDur = Number(c.unrecognized_min_duration) > 0 ? Number(c.unrecognized_min_duration) : 30;
         for (const e of Array.isArray(res2) ? res2 : []) {
-          if (seen.has(e.id) || e.sub_label) continue;
-          const end = e.end_time || Date.now() / 1e3;
-          if (end - e.start_time < minDur) continue;
+          if (seen.has(e.id) || e.sub_label) continue; // already listed / recognized as something else
+          const end = e.end_time || Date.now() / 1000;
+          if (end - e.start_time < minDur) continue; // drive-by, not a stop
           raw.push({ ...e, __unrecognized: true });
         }
       }
+      // Optionally include ALL person events as their own PERSON category
+      // (couriers' drivers included - person and car events are separate
+      // objects in Frigate and cannot be linked).
       if (c.persons && Array.isArray(c.sub_labels) && c.sub_labels.length) {
         const msg3 = { ...msg, labels: ["person"] };
         delete msg3.sub_labels;
@@ -703,32 +641,46 @@ class FrigateDeliveryCard extends HTMLElement {
           raw.push({ ...e, __person: true });
         }
       }
-      const evs = raw.map((e) => ({
-        id: e.id,
-        co: e.__person ? "person" : e.__unrecognized ? "other" : String(Array.isArray(e.sub_label) ? e.sub_label[0] : e.sub_label || e.label || "").split(",")[0].trim().toLowerCase(),
-        t: e.start_time
-      })).filter((e) => e.id && e.co).sort((a, b) => c.sort === "oldest" ? a.t - b.t : b.t - a.t);
+      const evs = raw
+        .map((e) => ({
+          id: e.id,
+          co: e.__person
+            ? "person"
+            : e.__unrecognized
+            ? "other"
+            : String(Array.isArray(e.sub_label) ? e.sub_label[0] : e.sub_label || e.label || "")
+                .split(",")[0]
+                .trim()
+                .toLowerCase(),
+          t: e.start_time,
+        }))
+        .filter((e) => e.id && e.co)
+        .sort((a, b) => (c.sort === "oldest" ? a.t - b.t : b.t - a.t));
       const cur = this._list()[this._idx];
       this._events = evs;
       const keep = cur ? this._list().findIndex((e) => e.id === cur.id) : -1;
       this._idx = keep >= 0 ? keep : 0;
       this._err = null;
     } catch (e) {
-      this._err = e && e.message || this._t("queryFailed");
+      this._err = (e && e.message) || this._t("queryFailed");
     }
     this._loaded = true;
-    if (!this._playing) this._render();
+    if (!this._playing) this._render(); // don't interrupt inline clip playback on refresh
   }
+
   _list() {
     return this._filter ? this._events.filter((e) => e.co === this._filter) : this._events;
   }
+
   _img(id) {
     return `/api/frigate/notifications/${id}/snapshot.jpg`;
   }
+
   /** Small object-crop thumbnail - exists for every event, even without a saved snapshot. */
   _thumb(id) {
     return `/api/frigate/notifications/${id}/thumbnail.jpg`;
   }
+
   /** Inline playback of the full-quality clip as a plain progressive stream -
    *  starts within a couple of seconds and plays at full resolution. The
    *  scrubber only covers what has buffered so far; that's the honest trade-off
@@ -739,13 +691,16 @@ class FrigateDeliveryCard extends HTMLElement {
     this._playing = true;
     this._render();
   }
+
   _stopClip() {
     this._clipFor = null;
     this._playing = false;
   }
+
   _clip(id) {
     return `/api/frigate/notifications/${id}/clip.mp4`;
   }
+
   /** Pick the right clip source for this browser. Safari/iOS (incl. the HA
    *  companion app) refuses progressive MP4 from servers without range-request
    *  support - which the HA proxy lacks - but plays Frigate's HLS VOD natively.
@@ -758,17 +713,19 @@ class FrigateDeliveryCard extends HTMLElement {
         const signed = await this._hass.callWS({
           type: "auth/sign_path",
           path: `/api/frigate/vod/event/${id}/index.m3u8`,
-          expires: 3600
+          expires: 3600,
         });
         return signed.path;
       } catch (e) {
+        /* fall back to progressive */
       }
     }
     return this._clip(id);
   }
+
   _when(t) {
-    const d = new Date(t * 1e3);
-    const now = /* @__PURE__ */ new Date();
+    const d = new Date(t * 1000);
+    const now = new Date();
     const language = this._language();
     const timePreference = this._hass?.locale?.time_format;
     const timeOptions = { hour: "2-digit", minute: "2-digit" };
@@ -783,13 +740,15 @@ class FrigateDeliveryCard extends HTMLElement {
       try {
         yesterday = new Intl.RelativeTimeFormat(language, { numeric: "auto" }).format(-1, "day");
       } catch (e) {
+        /* use the catalog fallback */
       }
       return `${yesterday} ${hm}`;
     }
+
     const dateFormatter = new Intl.DateTimeFormat(language, {
       day: "2-digit",
       month: "2-digit",
-      year: "numeric"
+      year: "numeric",
     });
     const datePreference = this._hass?.locale?.date_format;
     let date = dateFormatter.format(d);
@@ -802,11 +761,15 @@ class FrigateDeliveryCard extends HTMLElement {
     }
     return `${date} ${hm}`;
   }
+
   /** Inline style for a company badge; falls back to theme colors. */
   _badge(co) {
     const c = FDC_COLORS[co];
-    return c ? `background:${c.bg};color:${c.fg};border-color:${c.bg}` : `background:var(--secondary-background-color);color:var(--primary-text-color);border-color:var(--divider-color)`;
+    return c
+      ? `background:${c.bg};color:${c.fg};border-color:${c.bg}`
+      : `background:var(--secondary-background-color);color:var(--primary-text-color);border-color:var(--divider-color)`;
   }
+
   _build() {
     const r = this.attachShadow({ mode: "open" });
     r.innerHTML = `<style>
@@ -869,11 +832,12 @@ class FrigateDeliveryCard extends HTMLElement {
       .lb .playbtn{position:absolute;top:16px;inset-inline-end:16px}
       .lb .playbtn.lbplay{inset-inline-end:64px}
     </style><ha-card><div id="body"></div></ha-card>`;
-    r.host.addEventListener("mouseenter", () => this._hover = true);
-    r.host.addEventListener("mouseleave", () => this._hover = false);
+    r.host.addEventListener("mouseenter", () => (this._hover = true));
+    r.host.addEventListener("mouseleave", () => (this._hover = false));
     r.querySelector("ha-card").classList.toggle("fixed-height", this._hasFixedGridRows());
     this._startResizeObserver();
   }
+
   _render() {
     const b = this.shadowRoot && this.shadowRoot.getElementById("body");
     if (!b) return;
@@ -884,36 +848,84 @@ class FrigateDeliveryCard extends HTMLElement {
     }
     const view = this._cfg.view;
     const list = this._list();
-    const rank = (x) => x === "other" ? 2 : x === "person" ? 1 : 0;
-    const companies = [...new Set(this._events.map((e) => e.co))].sort((a, b2) => rank(a) - rank(b2));
-    const chips = this._events.length && view !== "timeline" ? `<div class="chips">
-          ${this._cfg.show_all !== false ? `<button class="chip all ${this._filter ? "" : "on"}" data-co="">${this._filter ? "" : "&#10003; "}${escapeHtml(this._t("all"))} (${this._events.length})</button>` : ""}
-          ${companies.map(
-      (c) => `<button class="chip ${this._filter === c ? "on" : ""}" style="${this._badge(c)}" data-co="${escapeHtml(c)}">${this._filter === c ? "&#10003; " : ""}${escapeHtml(this._companyLabel(c))} (${this._events.filter((e) => e.co === c).length})</button>`
-    ).join("")}
-        </div>` : "";
+    const rank = (x) => (x === "other" ? 2 : x === "person" ? 1 : 0); // couriers, then PERSON, then OTHER
+    const companies = [...new Set(this._events.map((e) => e.co))].sort((a, b) => rank(a) - rank(b));
+    const chips = this._events.length && view !== "timeline"
+      ? `<div class="chips">
+          ${
+            this._cfg.show_all !== false
+              ? `<button class="chip all ${this._filter ? "" : "on"}" data-co="">${this._filter ? "" : "&#10003; "}${escapeHtml(this._t("all"))} (${this._events.length})</button>`
+              : ""
+          }
+          ${companies
+            .map(
+              (c) =>
+                `<button class="chip ${this._filter === c ? "on" : ""}" style="${this._badge(c)}" data-co="${escapeHtml(c)}">${
+                  this._filter === c ? "&#10003; " : ""
+                }${escapeHtml(this._companyLabel(c))} (${this._events.filter((e) => e.co === c).length})</button>`
+            )
+            .join("")}
+        </div>`
+      : "";
     if (!list.length) {
       b.innerHTML = chips + `<div class="empty">${escapeHtml(this._emptyMessage())}</div>`;
     } else {
       if (this._idx >= list.length) this._idx = 0;
       const ev = list[this._idx];
-      const tl = view === "timeline" ? `<div class="tl">${list.map(
-        (e, i) => `<button class="pill ${i === this._idx ? "on" : ""}" style="${this._badge(e.co)}" title="${escapeHtml(this._companyLabel(e.co))}" data-i="${i}">${i === this._idx ? "&#10003; " : ""}${this._when(e.t)}</button>`
-      ).join("")}</div>` : "";
-      const media = this._playing === true ? `<video id="clipvid" controls autoplay playsinline></video>` : this._playing === "error" ? `<div class="cliperr">${escapeHtml(this._t("clipUnavailable"))}<br>${escapeHtml(this._t("clipRequiresRecord"))}</div>` : `<img src="${escapeHtml(this._img(ev.id))}" alt="${escapeHtml(this._t("eventSnapshot", { company: this._companyLabel(ev.co) }))}" onerror="this.onerror=null;this.src='${escapeHtml(this._thumb(ev.id))}'">`;
+      const tl =
+        view === "timeline"
+          ? `<div class="tl">${list
+              .map(
+                (e, i) =>
+                  `<button class="pill ${i === this._idx ? "on" : ""}" style="${this._badge(e.co)}" title="${escapeHtml(this._companyLabel(e.co))}" data-i="${i}">${
+                    i === this._idx ? "&#10003; " : ""
+                  }${this._when(e.t)}</button>`
+              )
+              .join("")}</div>`
+          : "";
+      const media =
+        this._playing === true
+          ? `<video id="clipvid" controls autoplay playsinline></video>`
+          : this._playing === "error"
+          ? `<div class="cliperr">${escapeHtml(this._t("clipUnavailable"))}<br>${escapeHtml(this._t("clipRequiresRecord"))}</div>`
+          : `<img src="${escapeHtml(this._img(ev.id))}" alt="${escapeHtml(this._t("eventSnapshot", { company: this._companyLabel(ev.co) }))}" onerror="this.onerror=null;this.src='${escapeHtml(this._thumb(ev.id))}'">`;
       const stage = `
         <div class="stage" id="stage">
           ${media}
-          ${list.length > 1 && !this._playing ? `<button class="nav prev" id="prev" title="${escapeHtml(this._t("previousEvent"))}" aria-label="${escapeHtml(this._t("previousEvent"))}">&#8249;</button><button class="nav next" id="next" title="${escapeHtml(this._t("nextEvent"))}" aria-label="${escapeHtml(this._t("nextEvent"))}">&#8250;</button>` : ""}
-          ${this._cfg.clips ? this._playing ? `<button class="playbtn" id="play" title="${escapeHtml(this._t("backToImage"))}" aria-label="${escapeHtml(this._t("backToImage"))}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></button>` : `<button class="playbtn" id="play" title="${escapeHtml(this._t("playClip"))}" aria-label="${escapeHtml(this._t("playClip"))}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>` : ""}
-          ${this._playing ? "" : `<button class="playbtn fs" id="fs" title="${escapeHtml(this._t("fullscreen"))}" aria-label="${escapeHtml(this._t("fullscreen"))}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></button>`}
-          ${this._playing === true ? "" : `<div class="cap"><span class="badge" style="${this._badge(ev.co)}">${escapeHtml(this._companyLabel(ev.co))}</span><span>${escapeHtml(this._when(
-        ev.t
-      ))} &#183; ${this._idx + 1}/${list.length}</span></div>`}
+          ${
+            list.length > 1 && !this._playing
+              ? `<button class="nav prev" id="prev" title="${escapeHtml(this._t("previousEvent"))}" aria-label="${escapeHtml(this._t("previousEvent"))}">&#8249;</button><button class="nav next" id="next" title="${escapeHtml(this._t("nextEvent"))}" aria-label="${escapeHtml(this._t("nextEvent"))}">&#8250;</button>`
+              : ""
+          }
+          ${
+            this._cfg.clips
+              ? this._playing
+                ? `<button class="playbtn" id="play" title="${escapeHtml(this._t("backToImage"))}" aria-label="${escapeHtml(this._t("backToImage"))}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></button>`
+                : `<button class="playbtn" id="play" title="${escapeHtml(this._t("playClip"))}" aria-label="${escapeHtml(this._t("playClip"))}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>`
+              : ""
+          }
+          ${
+            this._playing
+              ? ""
+              : `<button class="playbtn fs" id="fs" title="${escapeHtml(this._t("fullscreen"))}" aria-label="${escapeHtml(this._t("fullscreen"))}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></button>`
+          }
+          ${
+            this._playing === true
+              ? ""
+              : `<div class="cap"><span class="badge" style="${this._badge(ev.co)}">${escapeHtml(this._companyLabel(ev.co))}</span><span>${escapeHtml(this._when(
+                  ev.t
+                ))} &#183; ${this._idx + 1}/${list.length}</span></div>`
+          }
         </div>`;
-      const thumbs = view === "reel" ? `<div class="thumbs">${list.map(
-        (e, i) => `<img src="${escapeHtml(this._img(e.id))}" class="${i === this._idx ? "on" : ""}" data-i="${i}" alt="${escapeHtml(this._t("eventThumbnail", { company: this._companyLabel(e.co) }))}" onerror="this.onerror=null;this.src='${escapeHtml(this._thumb(e.id))}'">`
-      ).join("")}</div>` : "";
+      const thumbs =
+        view === "reel"
+          ? `<div class="thumbs">${list
+              .map(
+                (e, i) =>
+                  `<img src="${escapeHtml(this._img(e.id))}" class="${i === this._idx ? "on" : ""}" data-i="${i}" alt="${escapeHtml(this._t("eventThumbnail", { company: this._companyLabel(e.co) }))}" onerror="this.onerror=null;this.src='${escapeHtml(this._thumb(e.id))}'">`
+              )
+              .join("")}</div>`
+          : "";
       b.innerHTML = chips + tl + stage + thumbs;
       const go = (i) => {
         this._idx = (i + list.length) % list.length;
@@ -921,21 +933,15 @@ class FrigateDeliveryCard extends HTMLElement {
         this._render();
       };
       const q = (s) => b.querySelector(s);
-      if (q("#prev")) q("#prev").onclick = (e) => {
-        e.stopPropagation();
-        go(this._idx - 1);
-      };
-      if (q("#next")) q("#next").onclick = (e) => {
-        e.stopPropagation();
-        go(this._idx + 1);
-      };
+      if (q("#prev")) q("#prev").onclick = (e) => { e.stopPropagation(); go(this._idx - 1); };
+      if (q("#next")) q("#next").onclick = (e) => { e.stopPropagation(); go(this._idx + 1); };
       if (q("#fs"))
         q("#fs").onclick = (e) => {
           e.stopPropagation();
           this._lightbox(ev.id);
         };
       const stageImg = q(".stage > img");
-      if (stageImg) stageImg.onclick = () => this._lightbox(ev.id);
+      if (stageImg) stageImg.onclick = () => this._lightbox(ev.id); // tap the image = same as the fullscreen button
       if (q("#play"))
         q("#play").onclick = (e) => {
           e.stopPropagation();
@@ -951,29 +957,32 @@ class FrigateDeliveryCard extends HTMLElement {
         this._clipSrc(ev.id).then((src) => {
           if (this._playing === true && this._clipFor === ev.id && vid.isConnected) vid.src = src;
         });
+        // on clip end the player stays open - replay via the native controls, close via the X
         vid.onerror = () => {
-          if (!vid.src) return;
+          if (!vid.src) return; // source not attached yet
           this._stopClip();
           this._playing = "error";
           this._render();
         };
       }
-      b.querySelectorAll(".thumbs img").forEach((el) => el.onclick = () => go(Number(el.dataset.i)));
-      b.querySelectorAll(".pill").forEach((el) => el.onclick = () => go(Number(el.dataset.i)));
+      b.querySelectorAll(".thumbs img").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
+      b.querySelectorAll(".pill").forEach((el) => (el.onclick = () => go(Number(el.dataset.i))));
       const onPill = b.querySelector(".pill.on");
       if (onPill) onPill.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
     b.querySelectorAll(".chip").forEach(
-      (el) => el.onclick = () => {
-        const co = el.dataset.co || null;
-        this._filter = co === this._filter ? null : co;
-        this._idx = 0;
-        this._stopClip();
-        this._render();
-      }
+      (el) =>
+        (el.onclick = () => {
+          const co = el.dataset.co || null;
+          this._filter = co === this._filter ? null : co; // tapping the active chip clears the filter
+          this._idx = 0;
+          this._stopClip();
+          this._render();
+        })
     );
     this._scheduleResizeCheck();
   }
+
   _lightbox(id) {
     const d = document.createElement("div");
     d.className = "lb";
@@ -981,7 +990,11 @@ class FrigateDeliveryCard extends HTMLElement {
     d.setAttribute("aria-modal", "true");
     d.innerHTML = `
       <img src="${escapeHtml(this._img(id))}" alt="" onerror="this.onerror=null;this.src='${escapeHtml(this._thumb(id))}'">
-      ${this._cfg.clips ? `<button class="playbtn lbplay" title="${escapeHtml(this._t("playClip"))}" aria-label="${escapeHtml(this._t("playClip"))}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>` : ""}
+      ${
+        this._cfg.clips
+          ? `<button class="playbtn lbplay" title="${escapeHtml(this._t("playClip"))}" aria-label="${escapeHtml(this._t("playClip"))}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>`
+          : ""
+      }
       <button class="playbtn lbclose" title="${escapeHtml(this._t("close"))}" aria-label="${escapeHtml(this._t("close"))}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></button>`;
     d.onclick = () => d.remove();
     d.querySelector(".lbclose").onclick = (e) => {
@@ -999,13 +1012,13 @@ class FrigateDeliveryCard extends HTMLElement {
         v.controls = true;
         v.autoplay = true;
         v.playsInline = true;
-        v.onclick = (ev2) => ev2.stopPropagation();
+        v.onclick = (ev2) => ev2.stopPropagation(); // clicking the player must not close the overlay
         v.onerror = () => {
-          if (!v.src) return;
+          if (!v.src) return; // source not attached yet
           v.replaceWith(
             Object.assign(document.createElement("div"), {
               className: "lbmsg",
-              innerHTML: `${escapeHtml(this._t("clipUnavailable"))}<br>${escapeHtml(this._t("clipRequiresRecord"))}`
+              innerHTML: `${escapeHtml(this._t("clipUnavailable"))}<br>${escapeHtml(this._t("clipRequiresRecord"))}`,
             })
           );
         };
@@ -1016,24 +1029,28 @@ class FrigateDeliveryCard extends HTMLElement {
       };
     this.shadowRoot.appendChild(d);
   }
+
 }
+
 customElements.define("frigate-delivery-card", FrigateDeliveryCard);
+// Legacy alias (pre-1.0 inline version used this element name)
 if (!customElements.get("delivery-reel-card")) {
-  customElements.define("delivery-reel-card", class extends FrigateDeliveryCard {
-  });
+  customElements.define("delivery-reel-card", class extends FrigateDeliveryCard {});
 }
+
 window.customCards = window.customCards || [];
 const registrationCopy = getTranslations();
 window.customCards.push({
   type: "frigate-delivery-card",
   name: "Frigate Delivery Card",
-  description: registrationCopy.customCardDescription
+  description: registrationCopy.customCardDescription,
 });
 window.customCards.push({
   type: "delivery-reel-card",
   name: registrationCopy.legacyCardName,
-  description: registrationCopy.legacyCardDescription
+  description: registrationCopy.legacyCardDescription,
 });
+
 console.info(
   `%c FRIGATE-DELIVERY-CARD %c v${FDC_VERSION} `,
   "color:#fff;background:#03a9f4;font-weight:700",

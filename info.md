@@ -2,6 +2,8 @@
 
 See which delivery companies visited your home, when they arrived, and what happened. Frigate Delivery Card turns Frigate events into a browsable Home Assistant history with snapshots, inline video clips, company filters, a reel, and a timeline view.
 
+The card and graphical editor support English and German and automatically follow each user's Home Assistant profile language.
+
 ![Screenshot of the Frigate Delivery Card](https://raw.githubusercontent.com/thomasgregg/frigate-delivery-card/main/docs/screenshot.png)
 
 ## Sections dashboard sizing

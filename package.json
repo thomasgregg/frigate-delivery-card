@@ -1,0 +1,30 @@
+{
+  "name": "frigate-delivery-card",
+  "version": "1.27.0",
+  "description": "A Home Assistant card for browsing Frigate delivery events.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build && node scripts/copy-build.mjs",
+    "test": "vitest run",
+    "check": "npm run build && test -f frigate-delivery-card.js && npm run test"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "frigate",
+    "delivery"
+  ],
+  "author": "Thomas Gregg",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thomasgregg/frigate-delivery-card.git"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "happy-dom": "^20.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -15,6 +15,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build and verify card asset
+        run: |
+          npm ci
+          npm run check
+          git diff --exit-code -- frigate-delivery-card.js
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
