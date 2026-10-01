@@ -118,4 +118,55 @@ describe("Frigate Delivery Card localization", () => {
     expect(JSON.stringify(form.schema)).toContain("Diashow + Vorschaubildleiste");
     expect(JSON.stringify(form.schema)).toContain("Zusätzliche Ereigniskategorien");
   });
+  it.each([undefined, "contain", "cover", "invalid", "cover; color:red"])(
+    "uses safe video fit %s in inline and fullscreen playback", async (fitMode) => {
+      const Card = customElements.get("frigate-delivery-card") as CustomElementConstructor;
+      const card = new Card() as CardElement;
+      card.setConfig({ camera: "entrance", fit_mode: fitMode, slideshow: 0 });
+      document.body.append(card);
+      mounted.push(card);
+      card.hass = makeHass();
+      await vi.waitFor(() => expect(card.shadowRoot?.querySelector("#fs")).not.toBeNull());
+      const root = card.shadowRoot!;
+      (root.querySelector("#fs") as HTMLButtonElement).click();
+      (root.querySelector(".lbplay") as HTMLButtonElement).click();
+      expect(root.querySelector(".lb video")?.classList.contains("crop")).toBe(fitMode === "cover");
+      (root.querySelector(".lbclose") as HTMLButtonElement).click();
+      expect(root.querySelector(".lb")).toBeNull();
+      (root.querySelector("#play") as HTMLButtonElement).click();
+      expect(root.querySelector(".stage video")).not.toBeNull();
+      expect(root.querySelector("style")?.textContent).toContain(
+        `object-fit:${fitMode === "cover" ? "cover" : "contain"};background:#000`
+      );
+      (root.querySelector("#play") as HTMLButtonElement).click();
+      expect(root.querySelector(".stage > img")).not.toBeNull();
+    }
+  );
+
+  it("offers and saves video fit in the Appearance group", () => {
+    const Editor = customElements.get("frigate-delivery-card-editor") as CustomElementConstructor;
+    const editor = new Editor() as CardElement;
+    editor.setConfig({ camera: "entrance", view: "timeline" });
+    document.body.append(editor);
+    mounted.push(editor);
+    editor.hass = makeHass();
+    const form = editor.querySelector("ha-form") as HTMLElement & {
+      data: Record<string, unknown>;
+      schema: Array<{title?: string; schema?: Array<{name: string; selector: unknown}>}>;
+      computeLabel: (s: {name: string}) => string;
+    };
+    expect(form.data.fit_mode).toBe("contain");
+    const group = form.schema.find(group => group.title === "Appearance");
+    expect(group?.schema?.map(field => field.name)).toEqual(["fit_mode"]);
+    expect(JSON.stringify(group)).toContain("Crop to fill");
+    const changed = vi.fn();
+    editor.addEventListener("config-changed", changed);
+    form.dispatchEvent(new CustomEvent("value-changed", {detail: {value: {...form.data, fit_mode: "cover"}}}));
+    expect(changed.mock.calls[0][0].detail.config).toMatchObject({camera: "entrance", view: "timeline", fit_mode: "cover"});
+    editor.hass = makeHass("de");
+    expect(form.data.fit_mode).toBe("cover");
+    expect(form.computeLabel({name: "fit_mode"})).toBe("Videoanpassung");
+    expect(JSON.stringify(form.schema)).toContain("Darstellung");
+  });
+
 });

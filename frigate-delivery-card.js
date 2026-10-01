@@ -1,4 +1,9 @@
 const de = {
+  appearance: "Darstellung",
+  fitModeLabel: "Videoanpassung",
+  fitContain: "Gesamtes Video einpassen",
+  fitCover: "Zuschneiden und ausfüllen",
+  fitModeHelp: "Gilt für die Wiedergabe in der Karte und im Vollbild. Einpassen kann schwarze Balken anzeigen; Ausfüllen schneidet die Ränder ab.",
   advanced: "Erweitert",
   all: "Alle",
   backToImage: "Zurück zum Bild",
@@ -54,6 +59,11 @@ const de = {
   zonesLabel: "Zonen"
 };
 const en = {
+  appearance: "Appearance",
+  fitModeLabel: "Video fit",
+  fitContain: "Fit entire video",
+  fitCover: "Crop to fill",
+  fitModeHelp: "Applies to card playback and fullscreen. Fit entire video may leave black bars; Crop to fill crops the edges.",
   advanced: "Advanced",
   all: "All",
   backToImage: "Back to image",
@@ -134,7 +144,7 @@ function localize(key, language, replacements = {}) {
     template
   );
 }
-const FDC_VERSION = "1.27.1";
+const FDC_VERSION = "1.28.0";
 const FDC_COLORS = {
   dhl: { bg: "#FFCC00", fg: "#D40511" },
   dpd: { bg: "#DC0032", fg: "#FFFFFF" },
@@ -195,6 +205,7 @@ const FDC_SCHEMA = (copy) => [
     schema: [
       {
         name: "view",
+        required: true,
         selector: {
           select: {
             mode: "dropdown",
@@ -207,6 +218,7 @@ const FDC_SCHEMA = (copy) => [
       },
       {
         name: "sort",
+        required: true,
         selector: {
           select: {
             mode: "dropdown",
@@ -232,11 +244,33 @@ const FDC_SCHEMA = (copy) => [
   {
     name: "",
     type: "expandable",
+    title: copy.appearance,
+    icon: "mdi:palette-outline",
+    schema: [
+      {
+        name: "fit_mode",
+        required: true,
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              { value: "contain", label: copy.fitContain },
+              { value: "cover", label: copy.fitCover }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    name: "",
+    type: "expandable",
     title: copy.timeRange,
     icon: "mdi:clock-outline",
     schema: [
       {
         name: "period",
+        required: true,
         selector: {
           select: {
             mode: "dropdown",
@@ -292,7 +326,8 @@ const FDC_HELPERS = (copy) => ({
   sub_labels: copy.subLabelsHelp,
   labels: copy.labelsHelp,
   zones: copy.zonesHelp,
-  camera: copy.cameraHelp
+  camera: copy.cameraHelp,
+  fit_mode: copy.fitModeHelp
 });
 const FDC_LABELS = (copy) => ({
   camera: copy.cameraLabel,
@@ -301,6 +336,7 @@ const FDC_LABELS = (copy) => ({
   sort: copy.sortLabel,
   show_all: copy.showAllLabel,
   clips: copy.clipsLabel,
+  fit_mode: copy.fitModeLabel,
   slideshow: copy.slideshowLabel,
   refresh: copy.refreshLabel,
   period: copy.periodLabel,
@@ -385,6 +421,7 @@ class FrigateDeliveryCardEditor extends HTMLElement {
       view: "reel",
       sort: "newest",
       clips: true,
+      fit_mode: "contain",
       show_all: true,
       unrecognized: false,
       unrecognized_min_duration: 30,
@@ -432,6 +469,8 @@ class FrigateDeliveryCard extends HTMLElement {
         // "reel" | "timeline"
         sort: "newest",
         // "newest" | "oldest"
+        fit_mode: "contain",
+        // "contain" | "cover" for recording playback
         clips: true,
         // show the clip playback button (requires record enabled in Frigate)
         show_all: true,
@@ -462,6 +501,7 @@ class FrigateDeliveryCard extends HTMLElement {
     }
     if (!["reel", "timeline"].includes(this._cfg.view)) this._cfg.view = "reel";
     if (!["newest", "oldest"].includes(this._cfg.sort)) this._cfg.sort = "newest";
+    if (!["contain", "cover"].includes(this._cfg.fit_mode)) this._cfg.fit_mode = "contain";
     this._cfg.clips = this._cfg.clips !== false;
     const withoutGridOptions = (config) => {
       const comparable = { ...config };
@@ -832,7 +872,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .stage{position:relative;min-width:0;margin:clamp(7px,2cqi,10px) clamp(8px,2.4cqi,12px);border-radius:var(--ha-card-border-radius,12px);overflow:hidden;
         aspect-ratio:16/9;background:var(--secondary-background-color);cursor:pointer}
       .stage img{width:100%;height:100%;object-fit:cover;display:block}
-      .stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+      .stage video{width:100%;height:100%;object-fit:${this._cfg.fit_mode};background:#000;display:block}
       .cliperr{display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-width:0;min-height:0;
         color:#fff;background:#000;font-size:clamp(12px,3cqi,14px);padding:clamp(12px,4cqi,20px);text-align:center;line-height:1.5;overflow:auto}
       .cap{position:absolute;z-index:1;inset-inline:0;bottom:0;min-width:0;padding:clamp(16px,4cqi,20px) clamp(10px,3cqi,14px) clamp(7px,2cqi,10px);color:#fff;font-size:clamp(12px,3.2cqi,14px);font-weight:500;
@@ -865,6 +905,7 @@ class FrigateDeliveryCard extends HTMLElement {
       .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out}
       .lb img{max-width:96vw;max-height:96vh;border-radius:6px}
       .lb video{max-width:96vw;max-height:96vh;border-radius:6px;cursor:default}
+      .lb video.crop{width:min(96vw,170.6667vh);height:min(54vw,96vh);object-fit:cover;background:#000}
       .lbmsg{color:#fff;text-align:center;font-size:14px;line-height:1.7;padding:24px;max-width:420px}
       .lb .playbtn{position:absolute;top:16px;inset-inline-end:16px}
       .lb .playbtn.lbplay{inset-inline-end:64px}
@@ -996,6 +1037,7 @@ class FrigateDeliveryCard extends HTMLElement {
         if (img) img.remove();
         pb.remove();
         const v = document.createElement("video");
+        v.classList.toggle("crop", this._cfg.fit_mode === "cover");
         v.controls = true;
         v.autoplay = true;
         v.playsInline = true;

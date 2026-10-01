@@ -1,6 +1,11 @@
 import type { TranslationCatalog } from "./en";
 
 export const de = {
+  appearance: "Darstellung",
+  fitModeLabel: "Videoanpassung",
+  fitContain: "Gesamtes Video einpassen",
+  fitCover: "Zuschneiden und ausfüllen",
+  fitModeHelp: "Gilt für die Wiedergabe in der Karte und im Vollbild. Einpassen kann schwarze Balken anzeigen; Ausfüllen schneidet die Ränder ab.",
   advanced: "Erweitert",
   all: "Alle",
   backToImage: "Zurück zum Bild",

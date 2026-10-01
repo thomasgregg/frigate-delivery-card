@@ -80,6 +80,7 @@ YAML continues to work in every language.
 | `labels` | list | – | Optional Frigate object-label filter that restricts the main event query, e.g. `[person]`; unlike `persons`, it does not add a separate category query |
 | `zones` | list | – | Optional zone filter, e.g. `[mailbox]` |
 | `view` | string | `reel` | `reel` or `timeline` |
+| `fit_mode` | string | `contain` | Video fit in Appearance: `contain` shows the entire recording; `cover` crops to fill the player. Applies to card playback and fullscreen |
 | `sort` | string | `newest` | Event order: `newest` or `oldest` first |
 | `clips` | boolean | `true` | Show the ▶ clip-playback button (requires Frigate `record:` enabled) |
 | `show_all` | boolean | `true` | Show the ALL filter chip (total count + one-tap filter reset). With `false`, tap the active chip to clear the filter |

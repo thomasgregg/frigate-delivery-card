@@ -1,4 +1,9 @@
 export const en = {
+  appearance: "Appearance",
+  fitModeLabel: "Video fit",
+  fitContain: "Fit entire video",
+  fitCover: "Crop to fill",
+  fitModeHelp: "Applies to card playback and fullscreen. Fit entire video may leave black bars; Crop to fill crops the edges.",
   advanced: "Advanced",
   all: "All",
   backToImage: "Back to image",
