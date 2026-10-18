@@ -1,6 +1,6 @@
 # Frigate Delivery Card
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/thomasgregg/frigate-delivery-card/blob/main/LICENSE)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/thomasgregg/frigate-delivery-card)
 
@@ -58,10 +58,10 @@ YAML continues to work in every language.
 ### HACS (recommended)
 
 1. Open **HACS** in Home Assistant
-2. Click the three-dot menu → **Custom repositories**
-3. Add `https://github.com/thomasgregg/frigate-delivery-card` with category **Dashboard**
-4. Search for **Frigate Delivery Card** and download it
-5. Reload your browser (HACS registers the resource automatically)
+2. Search for **Frigate Delivery Card** and download it
+3. Reload your browser (HACS registers the resource automatically)
+
+Frigate Delivery Card is included in the HACS default repository list; no custom repository setup is needed. Existing installations continue to receive updates through HACS without reinstalling.
 
 ### Manual
 
@@ -70,6 +70,8 @@ YAML continues to work in every language.
 3. Add a dashboard resource: **Settings → Dashboards → ⋮ → Resources → Add**, URL `/local/frigate-delivery-card.js`, type **JavaScript module**
 
 ## Configuration
+
+To configure the card visually, edit your dashboard, select **Add card**, and search for **Frigate Delivery Card**. Select it and use the visual editor to enter your Frigate camera name and adjust the options below. YAML configuration is also supported.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
