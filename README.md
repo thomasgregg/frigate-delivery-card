@@ -57,6 +57,8 @@ YAML continues to work in every language.
 
 ### HACS (recommended)
 
+[![Open Frigate Delivery Card in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thomasgregg&repository=frigate-delivery-card&category=plugin)
+
 1. Open **HACS** in Home Assistant
 2. Search for **Frigate Delivery Card** and download it
 3. Reload your browser (HACS registers the resource automatically)
